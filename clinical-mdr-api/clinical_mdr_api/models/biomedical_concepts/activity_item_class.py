@@ -1,0 +1,387 @@
+from typing import Annotated, Callable, Self
+
+from pydantic import ConfigDict, Field, ValidationInfo, field_validator
+
+from clinical_mdr_api.descriptions.general import CHANGES_FIELD_DESC
+from clinical_mdr_api.domains.biomedical_concepts.activity_instance_class import (
+    ActivityInstanceClassAR,
+)
+from clinical_mdr_api.domains.biomedical_concepts.activity_item_class import (
+    ActivityItemClassAR,
+)
+from clinical_mdr_api.domains.versioned_object_aggregate import (
+    LibraryItemStatus,
+    ObjectAction,
+)
+from clinical_mdr_api.models.concepts.concept import VersionProperties
+from clinical_mdr_api.models.controlled_terminologies.ct_codelist import (
+    CTCodelistNameAndAttributes,
+)
+from clinical_mdr_api.models.libraries.library import Library
+from clinical_mdr_api.models.utils import (
+    BaseModel,
+    InputModel,
+    PatchInputModel,
+    PostInputModel,
+)
+from common.config import settings
+
+
+class CompactActivityInstanceClass(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    uid: Annotated[
+        str | None,
+        Field(
+            json_schema_extra={
+                "source": "has_activity_instance_class.uid",
+                "nullable": True,
+            }
+        ),
+    ] = None
+    name: Annotated[
+        str | None,
+        Field(
+            json_schema_extra={
+                "source": "has_activity_instance_class.has_latest_value.name",
+                "nullable": True,
+            }
+        ),
+    ] = None
+    mandatory: Annotated[
+        bool | None,
+        Field(
+            json_schema_extra={
+                "source": "has_activity_instance_class|mandatory",
+                "nullable": True,
+            }
+        ),
+    ] = None
+    is_adam_param_specific_enabled: Annotated[
+        bool | None,
+        Field(
+            json_schema_extra={
+                "source": "has_activity_instance_class|is_adam_param_specific_enabled",
+                "nullable": True,
+            }
+        ),
+    ] = None
+
+
+class SimpleDataTypeTerm(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    uid: Annotated[
+        str,
+        Field(
+            json_schema_extra={
+                "source": "has_latest_value.has_data_type.has_selected_term.uid"
+            }
+        ),
+    ]
+    codelist_uid: Annotated[
+        str | None,
+        Field(
+            json_schema_extra={
+                "source": "has_latest_value.has_data_type.has_selected_codelist.uid"
+            }
+        ),
+    ] = None
+    name: Annotated[
+        str | None,
+        Field(
+            json_schema_extra={
+                "source": "has_latest_value.has_data_type.has_selected_term.has_name_root.has_latest_value.name",
+                "nullable": True,
+            },
+        ),
+    ] = None
+
+
+class SimpleRoleTerm(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    uid: Annotated[
+        str,
+        Field(
+            json_schema_extra={
+                "source": "has_latest_value.has_role.has_selected_term.uid"
+            }
+        ),
+    ]
+    codelist_uid: Annotated[
+        str | None,
+        Field(
+            json_schema_extra={
+                "source": "has_latest_value.has_role.has_selected_codelist.uid"
+            }
+        ),
+    ] = None
+    name: Annotated[
+        str | None,
+        Field(
+            json_schema_extra={
+                "source": "has_latest_value.has_role.has_selected_term.has_name_root.has_latest_value.name",
+                "nullable": True,
+            },
+        ),
+    ] = None
+
+
+class SimpleVariableClass(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    uid: Annotated[
+        str | None,
+        Field(
+            json_schema_extra={"source": "maps_variable_class.uid", "nullable": True}
+        ),
+    ] = None
+
+
+class ActivityItemClass(VersionProperties):
+    model_config = ConfigDict(from_attributes=True)
+
+    uid: Annotated[
+        str | None, Field(json_schema_extra={"source": "uid", "nullable": True})
+    ] = None
+    name: Annotated[
+        str | None,
+        Field(json_schema_extra={"source": "has_latest_value.name", "nullable": True}),
+    ] = None
+    definition: Annotated[
+        str | None,
+        Field(
+            json_schema_extra={
+                "source": "has_latest_value.definition",
+                "nullable": True,
+            }
+        ),
+    ] = None
+    order: Annotated[int, Field(json_schema_extra={"source": "has_latest_value.order"})]
+    data_type: Annotated[SimpleDataTypeTerm, Field()]
+    role: Annotated[SimpleRoleTerm, Field()]
+    activity_instance_classes: Annotated[
+        list[CompactActivityInstanceClass] | None, Field()
+    ]
+    variable_classes: Annotated[
+        list[SimpleVariableClass] | None, Field(json_schema_extra={"nullable": True})
+    ] = None
+    library_name: Annotated[
+        str, Field(json_schema_extra={"source": "has_library.name"})
+    ]
+    nci_concept_id: Annotated[
+        str | None,
+        Field(
+            json_schema_extra={
+                "source": "has_latest_value.nci_concept_id",
+                "nullable": True,
+            }
+        ),
+    ] = None
+    possible_actions: Annotated[
+        list[str],
+        Field(
+            validate_default=True,
+            description=(
+                "Holds those actions that can be performed on the ActivityItemClasses. "
+                "Actions are: 'approve', 'edit', 'new_version'."
+            ),
+        ),
+    ]
+
+    @field_validator("possible_actions", mode="before")
+    @classmethod
+    def validate_possible_actions(cls, _, info: ValidationInfo):
+        if info.data["status"] == LibraryItemStatus.DRAFT.value and info.data[
+            "version"
+        ].startswith("0"):
+            return [
+                ObjectAction.APPROVE.value,
+                ObjectAction.DELETE.value,
+                ObjectAction.EDIT.value,
+            ]
+        if info.data["status"] == LibraryItemStatus.DRAFT.value:
+            return [ObjectAction.APPROVE.value, ObjectAction.EDIT.value]
+        if info.data["status"] == LibraryItemStatus.FINAL.value:
+            return [
+                ObjectAction.INACTIVATE.value,
+                ObjectAction.NEWVERSION.value,
+            ]
+        if info.data["status"] == LibraryItemStatus.RETIRED.value:
+            return [ObjectAction.REACTIVATE.value]
+        return []
+
+    @classmethod
+    def from_activity_item_class_ar(
+        cls,
+        activity_item_class_ar: ActivityItemClassAR,
+        find_activity_instance_class_by_uid: Callable[
+            [str], ActivityInstanceClassAR | None
+        ],
+    ) -> Self:
+        _activity_instance_classes = [
+            find_activity_instance_class_by_uid(activity_instance_class.uid)
+            for activity_instance_class in activity_item_class_ar.activity_item_class_vo.activity_instance_classes
+        ]
+
+        activity_instance_classes = []
+        for (
+            activity_instance_class
+        ) in activity_item_class_ar.activity_item_class_vo.activity_instance_classes:
+            rel = next(
+                item
+                for item in _activity_instance_classes
+                if item.uid == activity_instance_class.uid
+            )
+            activity_instance_classes.append(
+                CompactActivityInstanceClass(
+                    uid=activity_instance_class.uid,
+                    name=rel.name,
+                    mandatory=activity_instance_class.mandatory,
+                    is_adam_param_specific_enabled=activity_instance_class.is_adam_param_specific_enabled,
+                )
+            )
+
+        return cls(
+            uid=activity_item_class_ar.uid,
+            name=activity_item_class_ar.name,
+            definition=activity_item_class_ar.definition,
+            nci_concept_id=activity_item_class_ar.nci_concept_id,
+            order=activity_item_class_ar.activity_item_class_vo.order,
+            activity_instance_classes=activity_instance_classes,
+            data_type=SimpleDataTypeTerm(
+                uid=activity_item_class_ar.activity_item_class_vo.data_type.uid,
+                codelist_uid=activity_item_class_ar.activity_item_class_vo.data_type.codelist_uid,
+                name=activity_item_class_ar.activity_item_class_vo.data_type.name,
+            ),
+            role=SimpleRoleTerm(
+                uid=activity_item_class_ar.activity_item_class_vo.role.uid,
+                name=activity_item_class_ar.activity_item_class_vo.role.name,
+                codelist_uid=activity_item_class_ar.activity_item_class_vo.role.codelist_uid,
+            ),
+            variable_classes=(
+                [
+                    SimpleVariableClass(uid=variable_class_uid)
+                    for variable_class_uid in activity_item_class_ar.activity_item_class_vo.variable_class_uids
+                ]
+                if activity_item_class_ar.activity_item_class_vo.variable_class_uids
+                else []
+            ),
+            library_name=Library.from_library_vo(activity_item_class_ar.library).name,
+            start_date=activity_item_class_ar.item_metadata.start_date,
+            end_date=activity_item_class_ar.item_metadata.end_date,
+            status=activity_item_class_ar.item_metadata.status.value,
+            version=activity_item_class_ar.item_metadata.version,
+            change_description=activity_item_class_ar.item_metadata.change_description,
+            author_username=activity_item_class_ar.item_metadata.author_username,
+            possible_actions=sorted(
+                [_.value for _ in activity_item_class_ar.get_possible_actions()]
+            ),
+        )
+
+
+class CompactActivityItemClass(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    uid: Annotated[
+        str | None,
+        Field(json_schema_extra={"nullable": True}),
+    ] = None
+    name: Annotated[
+        str | None,
+        Field(
+            json_schema_extra={
+                "source": "has_latest_value.name",
+                "nullable": True,
+            }
+        ),
+    ] = None
+    mandatory: Annotated[
+        bool | None,
+        Field(
+            json_schema_extra={
+                "source": "has_activity_instance_class|mandatory",
+                "nullable": True,
+            }
+        ),
+    ] = None
+    is_adam_param_specific_enabled: Annotated[
+        bool | None,
+        Field(
+            json_schema_extra={
+                "source": "has_activity_instance_class|is_adam_param_specific_enabled",
+                "nullable": True,
+            }
+        ),
+    ] = None
+
+
+class ActivityInstanceClassRelInput(InputModel):
+    uid: Annotated[str, Field(min_length=1)]
+    is_adam_param_specific_enabled: Annotated[bool, Field()]
+    mandatory: Annotated[bool, Field()]
+
+
+class ActivityItemClassCreateInput(PostInputModel):
+    name: Annotated[str, Field()]
+    definition: Annotated[str | None, Field(min_length=1)] = None
+    nci_concept_id: Annotated[str | None, Field(min_length=1)] = None
+    order: Annotated[int, Field(gt=0, lt=settings.max_int_neo4j)]
+    activity_instance_classes: Annotated[list[ActivityInstanceClassRelInput], Field()]
+    role_uid: Annotated[str, Field(min_length=1)]
+    data_type_uid: Annotated[str, Field(min_length=1)]
+    library_name: Annotated[str, Field()]
+
+
+class ActivityItemClassEditInput(PatchInputModel):
+    name: Annotated[str | None, Field(min_length=1)] = None
+    definition: Annotated[str | None, Field(min_length=1)] = None
+    nci_concept_id: Annotated[str | None, Field(min_length=1)] = None
+    order: Annotated[int | None, Field(gt=0, lt=settings.max_int_neo4j)] = None
+    activity_instance_classes: list[ActivityInstanceClassRelInput] = Field(
+        default_factory=list
+    )
+    library_name: Annotated[str | None, Field(min_length=1)] = None
+    change_description: Annotated[str, Field(min_length=1)]
+    role_uid: Annotated[str | None, Field(min_length=1)] = None
+    data_type_uid: Annotated[str | None, Field(min_length=1)] = None
+
+
+class ActivityItemClassMappingInput(PatchInputModel):
+    variable_class_uids: list[str] = Field(default_factory=list)
+
+
+class ActivityItemClassVersion(ActivityItemClass):
+    """
+    Class for storing ActivityItemClass and calculation of differences
+    """
+
+    changes: list[str] = Field(description=CHANGES_FIELD_DESC, default_factory=list)
+
+
+class ActivityItemClassCodelist(CTCodelistNameAndAttributes):
+    term_uids: Annotated[
+        list[str] | None,
+        Field(
+            json_schema_extra={"nullable": True},
+            description="Optional list of term uids referenced by the data model. Null indicates that all terms of the codelist are available.",
+        ),
+    ] = None
+
+    @classmethod
+    def from_codelist_and_terms(
+        cls, cl_name_and_attrs: CTCodelistNameAndAttributes, term_uids: list[str] | None
+    ):
+        return cls(
+            catalogue_names=cl_name_and_attrs.catalogue_names,
+            codelist_uid=cl_name_and_attrs.codelist_uid,
+            parent_codelist_uid=cl_name_and_attrs.parent_codelist_uid,
+            child_codelist_uids=cl_name_and_attrs.child_codelist_uids,
+            library_name=cl_name_and_attrs.library_name,
+            name=cl_name_and_attrs.name,
+            attributes=cl_name_and_attrs.attributes,
+            paired_codes_codelist_uid=cl_name_and_attrs.paired_codes_codelist_uid,
+            paired_names_codelist_uid=cl_name_and_attrs.paired_names_codelist_uid,
+            term_uids=term_uids,
+        )

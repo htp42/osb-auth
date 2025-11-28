@@ -1,0 +1,258 @@
+<template>
+  <div>
+    <NNTable
+      ref="table"
+      :headers="headers"
+      item-value="uid"
+      export-object-label="Studies"
+      hide-search-field
+      disable-filtering
+      :export-data-url="exportDataUrl"
+      :modifiable-table="false"
+      modify-only-columns
+      column-data-resource="studies"
+      v-bind="$attrs"
+      @custom-sort="sort"
+    >
+      <template #beforeSearch>
+        <slot name="customSearch" />
+      </template>
+      <template #customFiltering>
+        <slot name="customFiltering" />
+      </template>
+      <template #actions="">
+        <v-btn
+          v-if="!readOnly"
+          data-cy="add-study"
+          class="ml-2"
+          size="small"
+          variant="outlined"
+          color="nnBaseBlue"
+          :title="$t('StudyForm.add_title')"
+          :disabled="!accessGuard.checkPermission($roles.STUDY_WRITE)"
+          icon="mdi-plus"
+          @click.stop="showCreationForm = true"
+        />
+        <v-btn
+          class="ml-2"
+          size="small"
+          variant="outlined"
+          color="nnBaseBlue"
+          :title="$t('NNTableTooltips.filters')"
+          icon="mdi-filter-outline"
+          @click="emit('enableFiltering')"
+        />
+      </template>
+      <template #[`item.version_start_date`]="{ item }">
+        {{ $filters.date(item.version_start_date) }}
+      </template>
+      <template #[`item.latest_locked_version`]="{ item }">
+        <div class="d-flex">
+          <div class="version-chip">
+            {{
+              item.latest_locked_version?.substring(
+                0,
+                item.latest_locked_version.indexOf(' ')
+              )
+            }}
+          </div>
+          <v-tooltip
+            v-if="item.latest_locked_version?.length > 60"
+            location="top"
+          >
+            <template #activator="{ props }">
+              <span v-bind="props">{{
+                item.latest_locked_version.substring(
+                  item.latest_locked_version.indexOf(' '),
+                  60
+                ) + '...'
+              }}</span>
+            </template>
+            <span>{{ item.latest_locked_version }}</span>
+          </v-tooltip>
+          <div v-else>
+            {{
+              item.latest_locked_version?.substring(
+                item.latest_locked_version.indexOf(' ')
+              )
+            }}
+          </div>
+        </div>
+      </template>
+      <template #[`item.latest_released_version`]="{ item }">
+        <div class="d-flex">
+          <div class="version-chip">
+            {{
+              item.latest_released_version?.substring(
+                0,
+                item.latest_released_version.indexOf(' ')
+              )
+            }}
+          </div>
+          <v-tooltip
+            v-if="item.latest_released_version?.length > 60"
+            location="top"
+          >
+            <template #activator="{ props }">
+              <span v-bind="props">{{
+                item.latest_released_version?.substring(
+                  item.latest_released_version.indexOf(' '),
+                  60
+                ) + '...'
+              }}</span>
+            </template>
+            <span>{{ item.latest_released_version }}</span>
+          </v-tooltip>
+          <div v-else>
+            {{
+              item.latest_released_version?.substring(
+                item.latest_released_version.indexOf(' ')
+              )
+            }}
+          </div>
+        </div>
+      </template>
+      <template #[`item.version_status`]="{ item }">
+        <StatusChip :status="item.version_status" />
+      </template>
+    </NNTable>
+    <StudyForm
+      :open="showForm"
+      :edited-study="activeStudy"
+      @close="closeForms"
+    />
+    <v-dialog
+      v-model="showCreationForm"
+      persistent
+      fullscreen
+      content-class="fullscreen-dialog"
+    >
+      <StudyCreationForm @close="closeForms" />
+    </v-dialog>
+  </div>
+</template>
+
+<script setup>
+import { computed, ref } from 'vue'
+import NNTable from '@/components/tools/NNTable.vue'
+import StudyForm from '@/components/studies/StudyForm.vue'
+import StudyCreationForm from '@/components/studies/StudyCreationForm.vue'
+import StatusChip from '@/components/tools/StatusChip.vue'
+import { useI18n } from 'vue-i18n'
+import { useAccessGuard } from '@/composables/accessGuard'
+
+const props = defineProps({
+  readOnly: {
+    type: Boolean,
+    default: false,
+  },
+})
+const emit = defineEmits(['refreshStudies', 'enableFiltering', 'sort'])
+
+const { t } = useI18n()
+const accessGuard = useAccessGuard()
+
+const headers = [
+  {
+    title: t('StudyTable.clinical_programme'),
+    key: 'clinical_programme_name',
+  },
+  {
+    title: t('StudyTable.project_id'),
+    key: 'project_number',
+  },
+  {
+    title: t('StudyTable.project_name'),
+    key: 'project_name',
+  },
+  {
+    title: t('StudyTable.number'),
+    key: 'number',
+  },
+  {
+    title: t('StudyTable.id'),
+    key: 'id',
+  },
+  {
+    title: t('StudyTable.subpart_id'),
+    key: 'subpart_id',
+  },
+  {
+    title: t('StudyTable.acronym'),
+    key: 'acronym',
+  },
+  {
+    title: t('StudyTable.subpart_acronym'),
+    key: 'subpart_acronym',
+  },
+  {
+    title: t('StudyTable.title'),
+    key: 'title',
+  },
+  {
+    title: t('StudyTable.lts_version'),
+    key: 'version_number',
+  },
+  {
+    title: t('StudyTable.lts_locked_ver'),
+    key: 'latest_locked_version',
+  },
+  {
+    title: t('StudyTable.lts_released_ver'),
+    key: 'latest_released_version',
+  },
+  {
+    title: t('_global.status'),
+    key: 'version_status',
+  },
+  {
+    title: t('_global.modified'),
+    key: 'version_start_date',
+  },
+  {
+    title: t('_global.modified_by'),
+    key: 'version_author',
+  },
+]
+
+const showCreationForm = ref(false)
+const showForm = ref(false)
+const activeStudy = ref(null)
+const table = ref()
+
+const exportDataUrl = computed(() => {
+  let result = '/studies/list?minimal_response=false'
+  if (props.readOnly) {
+    result += '&deleted=true'
+  }
+  return result
+})
+
+function sort(data) {
+  emit('sort', data)
+}
+
+function closeForms() {
+  showForm.value = false
+  showCreationForm.value = false
+  activeStudy.value = null
+  table.value.filterTable()
+  emit('refreshStudies')
+}
+
+function filter() {
+  table.value.filterTable()
+}
+
+defineExpose({ filter })
+</script>
+<style lang="css" scoped>
+.version-chip {
+  background-color: aliceblue;
+  width: fit-content;
+  height: fit-content;
+  padding-inline: 10px;
+  border-radius: 8px;
+  margin-right: 5px;
+}
+</style>

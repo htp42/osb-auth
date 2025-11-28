@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>JWT Encoding Test</title>
+</head>
+<body>
+  <h1>JWT Encoding/Decoding Test</h1>
+  <button onclick="testJWT()">Run Test</button>
+  <pre id="output"></pre>
+
+  <script>
+    // Copy the exact functions from useAuth.js
+    function base64UrlEncode(str) {
+      const base64 = btoa(str)
+      return base64
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=/g, '')
+    }
+
+    function base64UrlDecode(str) {
+      let base64 = str.replace(/-/g, '+').replace(/_/g, '/')
+      const padding = base64.length % 4
+      if (padding) {
+        base64 += '='.repeat(4 - padding)
+      }
+      return atob(base64)
+    }
+
+    function decodeToken(token) {
+      if (!token) return null
+      try {
+        const parts = token.split('.')
+        if (parts.length !== 3) {
+          throw new Error('Invalid JWT format')
+        }
+        
+        const payload = base64UrlDecode(parts[1])
+        return JSON.parse(payload)
+      } catch (error) {
+        console.error('Error decoding token:', error)
+        return null
+      }
+    }
+
+    function createCustomToken(originalPayload, roles, userData) {
+      const JWT_HEADER = {
+        alg: 'HS256',
+        typ: 'JWT'
+      }
+
+      const customPayload = {
+        ...originalPayload,
+        roles: roles || [],
+        name: userData.name || '',
+        email: userData.email || '',
+        role: userData.role,
+        iat: Math.floor(Date.now() / 1000)
+      }
+
+      const headerEncoded = base64UrlEncode(JSON.stringify(JWT_HEADER))
+      const payloadEncoded = base64UrlEncode(JSON.stringify(customPayload))
+      const signature = base64UrlEncode('client-side-signature')
+      
+      return `${headerEncoded}.${payloadEncoded}.${signature}`
+    }
+
+    function testJWT() {
+      const output = document.getElementById('output')
+      let log = ''
+
+      // Test 1: Basic encoding/decoding
+      log += '=== TEST 1: Basic Base64 Encoding/Decoding ===\n'
+      const testString = 'Hello, World!'
+      const encoded = base64UrlEncode(testString)
+      const decoded = base64UrlDecode(encoded)
+      log += `Original: ${testString}\n`
+      log += `Encoded: ${encoded}\n`
+      log += `Decoded: ${decoded}\n`
+      log += `Match: ${testString === decoded ? '✅ PASS' : '❌ FAIL'}\n\n`
+
+      // Test 2: JSON encoding/decoding
+      log += '=== TEST 2: JSON Object Encoding/Decoding ===\n'
+      const testObj = { name: 'Test', roles: ['Role1', 'Role2'] }
+      const objEncoded = base64UrlEncode(JSON.stringify(testObj))
+      const objDecoded = JSON.parse(base64UrlDecode(objEncoded))
+      log += `Original: ${JSON.stringify(testObj)}\n`
+      log += `Encoded: ${objEncoded}\n`
+      log += `Decoded: ${JSON.stringify(objDecoded)}\n`
+      log += `Roles match: ${JSON.stringify(objDecoded.roles) === JSON.stringify(testObj.roles) ? '✅ PASS' : '❌ FAIL'}\n\n`
+
+      // Test 3: Create and decode custom JWT
+      log += '=== TEST 3: Custom JWT Creation ===\n'
+      const originalPayload = {
+        id: '123',
+        exp: 1762952499,
+        type: 'auth'
+      }
+      const roles = ['Study.Read', 'Library.Write', 'Library.Read']
+      const userData = {
+        name: 'Test User',
+        email: 'test@example.com',
+        role: 0
+      }
+
+      log += `Original Payload: ${JSON.stringify(originalPayload)}\n`
+      log += `Roles: ${JSON.stringify(roles)}\n`
+      log += `User Data: ${JSON.stringify(userData)}\n\n`
+
+      const token = createCustomToken(originalPayload, roles, userData)
+      log += `Created Token: ${token}\n\n`
+
+      const decoded = decodeToken(token)
+      log += `Decoded Token: ${JSON.stringify(decoded, null, 2)}\n\n`
+
+      log += `Has roles field: ${decoded.hasOwnProperty('roles') ? '✅ YES' : '❌ NO'}\n`
+      log += `Roles value: ${JSON.stringify(decoded.roles)}\n`
+      log += `Roles is array: ${Array.isArray(decoded.roles) ? '✅ YES' : '❌ NO'}\n`
+      log += `Roles length: ${decoded.roles?.length || 0}\n`
+      log += `Roles match: ${JSON.stringify(decoded.roles) === JSON.stringify(roles) ? '✅ PASS' : '❌ FAIL'}\n\n`
+
+      // Test 4: Decode a sample token from localStorage (if available)
+      log += '=== TEST 4: Decode Token from localStorage ===\n'
+      const storedToken = localStorage.getItem('pb_custom_token')
+      if (storedToken) {
+        log += `Token found in localStorage\n`
+        log += `Token: ${storedToken.substring(0, 50)}...\n\n`
+        
+        const storedDecoded = decodeToken(storedToken)
+        if (storedDecoded) {
+          log += `Decoded: ${JSON.stringify(storedDecoded, null, 2)}\n\n`
+          log += `Has roles: ${storedDecoded.hasOwnProperty('roles') ? '✅ YES' : '❌ NO'}\n`
+          log += `Roles: ${JSON.stringify(storedDecoded.roles)}\n`
+        } else {
+          log += '❌ Failed to decode token\n'
+        }
+      } else {
+        log += 'No token found in localStorage (login first)\n'
+      }
+
+      output.textContent = log
+      console.log(log)
+    }
+  </script>
+</body>
+</html>
+
