@@ -1,0 +1,5 @@
+CODELIST_SUBMVAL,TERM_SUBMVAL,SPONSOR_NAME,SPONSOR_NAME_SENTENCE_CASE,NCI_PREFERRED_NAME,ORDER,CONCEPT_ID,CATALOGUES,DEFINITION
+"EPOCHTP","PRE TREATMENT EPOCH TYPE","Pre Treatment",,,1,,,"A period in a clinical study before subjects receive investigational product."
+"EPOCHTP","TREATMENT","Treatment",,,2,C101526,,
+"EPOCHTP","NO TREATMENT EPOCH TYPE","No Treatment",,,3,,,"A period in a clinical study where subjects do not receive investigational product."
+"EPOCHTP","POST TREATMENT EPOCH TYPE","Post Treatment",,,4,,,"A period in a clinical study after subjects receive investigational product."

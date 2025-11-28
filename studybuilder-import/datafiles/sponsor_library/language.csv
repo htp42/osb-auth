@@ -1,0 +1,7 @@
+CODELIST_SUBMVAL,TERM_SUBMVAL,SPONSOR_NAME,SPONSOR_NAME_SENTENCE_CASE,NCI_PREFERRED_NAME,ORDER,CONCEPT_ID,CATALOGUES,DEFINITION
+LANGUAGE,ENG,English,english,English,1,,,English code
+LANGUAGE,FRA,French,french,French,2,,,French code
+LANGUAGE,DEU,German,german,German,3,,,German code
+LANGUAGE,DAN,Danish,danish,Danish,4,,,Danish code
+LANGUAGE,SPA,Spanish,spanish,Spanish,5,,,Spanish code
+LANGUAGE,ITA,Italian,italian,Italian,6,,,Italian code

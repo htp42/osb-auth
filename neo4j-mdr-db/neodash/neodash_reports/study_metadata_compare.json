@@ -1,0 +1,744 @@
+{
+  "title": "Study Metadata Comparison",
+  "version": "2.4",
+  "settings": {
+    "pagenumber": 0,
+    "editable": true,
+    "fullscreenEnabled": false,
+    "parameters": {
+      "neodash_project": [],
+      "neodash_project_display": [],
+      "neodash_studya": {},
+      "neodash_studya_display": "",
+      "neodash_studyb": {},
+      "neodash_studyb_display": "",
+      "neodash_versiondate_studya": "",
+      "neodash_versiondate_studya_display": "",
+      "neodash_versiondate_studyb": "",
+      "neodash_versiondate_studyb_display": "",
+      "neodash_sstdtc": {
+        "year": 2024,
+        "month": 10,
+        "day": 29
+      },
+      "neodash_differences_only": "No",
+      "neodash_differences_only_display": "No",
+      "neodash_diff_only": "On",
+      "neodash_diff_only_display": [
+        "On"
+      ]
+    },
+    "theme": "light"
+  },
+  "pages": [
+    {
+      "title": "ReadMe",
+      "reports": [
+        {
+          "id": "c4dbd4e3-579c-49e5-88a7-f563c2a659d8",
+          "title": "Guide",
+          "query": "This report is for comparing study metadata. \n\nYou can choose to compare two different studies or two versions of a study.\n\nTo compare select the studies to compare in the first tab - **Select Studies**.\n\nOn the **Select Studies** tab, in the first panel you can choose to only show differences (default: Yes) or all (No). \n\n\n",
+          "width": 24,
+          "height": 4,
+          "x": 0,
+          "y": 0,
+          "type": "text",
+          "selection": {},
+          "settings": {},
+          "schema": []
+        }
+      ]
+    },
+    {
+      "title": "Select studies",
+      "reports": [
+        {
+          "id": "0b6746fc-65e9-4971-8913-7530beb60206",
+          "title": "Select Project(s)",
+          "query": "MATCH (p:Project)-[:HAS_FIELD]->(:StudyProjectField)<-[:HAS_PROJECT]-(s:StudyValue)\nWHERE toLower(toString(p.`project_number`)) CONTAINS toLower($input) \nRETURN DISTINCT p.`project_number` as value,  p.`project_number` as display ORDER BY size(toString(value)) ASC LIMIT 10",
+          "width": 19,
+          "height": 2,
+          "x": 5,
+          "y": 0,
+          "type": "select",
+          "selection": {},
+          "settings": {
+            "type": "Custom Query",
+            "multiSelector": true,
+            "ignoreNonDefinedParams": false,
+            "entityType": "Project",
+            "parameterName": "neodash_project"
+          },
+          "schema": []
+        },
+        {
+          "id": "5e333e2c-6067-4875-95a0-d6e239821fdd",
+          "title": "Select Base",
+          "query": "CALL apoc.when(size($neodash_project)=0,\"match(sr:StudyRoot)-[r0:HAS_VERSION]->(s:StudyValue)\nwith r0, s, CASE WHEN s.subpart_id is not null THEN s.study_id_prefix+'-'+s.study_number+'-'+s.subpart_id ELSE s.study_id_prefix+'-'+s.study_number END as trialid\nwith s, trialid \nmatch (sr:StudyRoot)-[r0:HAS_VERSION]->(s)\nOPTIONAL MATCH (sr)-[r1:LATEST]->(s)\noptional match(s)<-[r:AFTER]-(sact:StudyAction)\nwith distinct s,trialid,sr.uid as StudyRoot, collect(r0.status) as statuses ,collect(r0.version) as versions, type(r1) as Latest,sact.date as date order by StudyRoot, sact.date\nwith s,StudyRoot, s.study_acronym as acronym, trialid, split(apoc.temporal.format(date, 'iso_local_date_time'),'.')[0] as Date, case when 'LOCKED' in statuses then 'LOCKED' else 'DRAFT' END as Status,\napoc.text.join(apoc.coll.toSet(versions),'') as Version,Latest \nreturn StudyRoot, trialid as TrialID, acronym as Acronym, Date, Version, Latest,Status, 'Base' as Select, id(s) as id_a\",\n\"match(p:Project)-[:HAS_FIELD]->(:StudyProjectField)<-[:HAS_PROJECT]-(s:StudyValue) \nwhere p.project_number in $a\nmatch(sr:StudyRoot)-[r0:HAS_VERSION]->(s:StudyValue)\nwith r0, s, CASE WHEN s.subpart_id is not null THEN s.study_id_prefix+'-'+s.study_number+'-'+s.subpart_id ELSE s.study_id_prefix+'-'+s.study_number END as trialid\nwith s, trialid\nmatch (sr:StudyRoot)-[r0:HAS_VERSION]->(s)\nOPTIONAL MATCH (sr)-[r1:LATEST]->(s)\noptional match(s)<-[r:AFTER]-(sact:StudyAction)\nwith distinct s,trialid,sr.uid as StudyRoot, collect(r0.status) as statuses ,collect(r0.version) as versions, type(r1) as Latest,sact.date as date order by StudyRoot, sact.date\nwith s,StudyRoot, s.study_acronym as acronym, trialid, split(apoc.temporal.format(date, 'iso_local_date_time'),'.')[0] as Date, case when 'LOCKED' in statuses then 'LOCKED' else 'DRAFT' END as Status,\napoc.text.join(apoc.coll.toSet(versions),'') as Version,Latest \nreturn StudyRoot, trialid as TrialID, acronym as Acronym, Date, Version, Latest,Status, 'Base' as Select, id(s) as id_a\",{a:$neodash_project}) YIELD value \nRETURN  value.StudyRoot as StudyRoot, \nvalue.TrialID as `Trial ID`,\nvalue.Acronym as Acronym,\nvalue.Date as Date,\nvalue.Version as Version,\nvalue.Status as Status,\nvalue.Latest as Latest, \nvalue.Select as Select,\nvalue.id_a as __id_a order by `Trial ID`, Date",
+          "width": 24,
+          "height": 4,
+          "x": 0,
+          "y": 2,
+          "type": "table",
+          "selection": {},
+          "settings": {
+            "actionsRules": [
+              {
+                "condition": "Click",
+                "field": "Select",
+                "value": "__id_a",
+                "customization": "set variable",
+                "customizationValue": "studya"
+              }
+            ],
+            "refreshButtonEnabled": true,
+            "compact": true,
+            "columnWidths": "[2,2,2,2,1,1,1,2]",
+            "ignoreNonDefinedParams": false,
+            "wrapContent": true
+          }
+        },
+        {
+          "id": "232befa7-93ac-49d8-a73f-ae5bc308b011",
+          "title": "Select Compare",
+          "query": "CALL apoc.when(size($neodash_project)=0,\"match(sr:StudyRoot)-[r0:HAS_VERSION]->(s:StudyValue)\nwith r0, s, CASE WHEN s.subpart_id is not null THEN s.study_id_prefix+'-'+s.study_number+'-'+s.subpart_id ELSE s.study_id_prefix+'-'+s.study_number END as trialid\nwith s, trialid \nmatch (sr:StudyRoot)-[r0:HAS_VERSION]->(s)\nOPTIONAL MATCH (sr)-[r1:LATEST]->(s)\noptional match(s)<-[r:AFTER]-(sact:StudyAction)\nwith distinct s,trialid,sr.uid as StudyRoot, collect(r0.status) as statuses ,collect(r0.version) as versions, type(r1) as Latest,sact.date as date order by StudyRoot, sact.date\nwith s,StudyRoot, s.study_acronym as acronym, trialid, split(apoc.temporal.format(date, 'iso_local_date_time'),'.')[0] as Date, case when 'LOCKED' in statuses then 'LOCKED' else 'DRAFT' END as Status,\napoc.text.join(apoc.coll.toSet(versions),'') as Version,Latest \nreturn StudyRoot, trialid as TrialID, acronym as Acronym, Date, Version, Latest,Status, 'Compare' as Select, id(s) as id_b\",\n\"match(p:Project)-[:HAS_FIELD]->(:StudyProjectField)<-[:HAS_PROJECT]-(s:StudyValue) \nwhere p.project_number in $a\nmatch(sr:StudyRoot)-[r0:HAS_VERSION]->(s:StudyValue)\nwith r0, s, CASE WHEN s.subpart_id is not null THEN s.study_id_prefix+'-'+s.study_number+'-'+s.subpart_id ELSE s.study_id_prefix+'-'+s.study_number END as trialid\nwith s, trialid\nmatch (sr:StudyRoot)-[r0:HAS_VERSION]->(s)\nOPTIONAL MATCH (sr)-[r1:LATEST]->(s)\noptional match(s)<-[r:AFTER]-(sact:StudyAction)\nwith distinct s,trialid,sr.uid as StudyRoot, collect(r0.status) as statuses ,collect(r0.version) as versions, type(r1) as Latest,sact.date as date order by StudyRoot, sact.date\nwith s,StudyRoot, s.study_acronym as acronym, trialid, split(apoc.temporal.format(date, 'iso_local_date_time'),'.')[0] as Date, case when 'LOCKED' in statuses then 'LOCKED' else 'DRAFT' END as Status,\napoc.text.join(apoc.coll.toSet(versions),'') as Version,Latest \nreturn StudyRoot, trialid as TrialID, acronym as Acronym, Date, Version, Latest,Status, 'Compare' as Select, id(s) as id_b\",{a:$neodash_project}) YIELD value \nRETURN  value.StudyRoot as StudyRoot, \nvalue.TrialID as `Trial ID`,\nvalue.Acronym as Acronym,\nvalue.Date as Date,\nvalue.Version as Version,\nvalue.Status as Status,\nvalue.Latest as Latest, \nvalue.Select as Select,\nvalue.id_b as __id_b order by `Trial ID`, Date",
+          "width": 24,
+          "height": 4,
+          "x": 0,
+          "y": 6,
+          "type": "table",
+          "selection": {},
+          "settings": {
+            "actionsRules": [
+              {
+                "condition": "Click",
+                "field": "Select",
+                "value": "__id_b",
+                "customization": "set variable",
+                "customizationValue": "studyb"
+              }
+            ],
+            "refreshButtonEnabled": true,
+            "columnWidths": "[2,2,2,2,1,1,1,2]",
+            "compact": true,
+            "wrapContent": true
+          }
+        },
+        {
+          "id": "b2cda169-8f28-48c2-b83b-718696fad031",
+          "title": "Selected Studies",
+          "query": "MATCH (sr:StudyRoot)-[r0:HAS_VERSION]->(s:StudyValue)\nWHERE id(s) IN [toInteger($neodash_studya), toInteger($neodash_studyb)]\nWITH\n  CASE\n    WHEN count(distinct sr) > 1 THEN 'Across Study'\n    ELSE 'Within Study'\n  END AS compare_type\nWITH compare_type\nmatch(sr:StudyRoot)-[r0:HAS_VERSION]->(s:StudyValue) where id(s) in[toInteger($neodash_studya),toInteger($neodash_studyb)]\nwith compare_type,r0, s, sr, s.study_id_prefix+'-'+s.study_number as trialid, \nCASE when id(s)=toInteger($neodash_studya) then 'Base' ELSE 'Compare' END as Study\nwith compare_type,s, sr, trialid, Study\nmatch (sr:StudyRoot)-[r0:HAS_VERSION]->(s)\noptional match(s)<-[r:AFTER]-(sact:StudyAction)\nwith distinct compare_type,s,sr.uid as StudyRoot,Study, trialid, collect(r0.status) as statuses ,collect(r0.version) as versions, sact.date as date order by trialid, sact.date\nwith compare_type,s,StudyRoot,Study, trialid, split(apoc.temporal.format(date, 'iso_local_date_time'),'.')[0] as Date, case when 'LOCKED' in statuses then 'LOCKED' else 'DRAFT' END as Status,\napoc.text.join(apoc.coll.toSet(versions),'') as Version \nreturn Study,\ntrialid as TrialID, Date, Version, Status, compare_type as `Compare Type`, StudyRoot order by Study, Version\n\n\n",
+          "width": 24,
+          "height": 3,
+          "x": 0,
+          "y": 10,
+          "type": "table",
+          "selection": {},
+          "settings": {
+            "refreshButtonEnabled": true,
+            "noDataMessage": "Please select BASE and COMPARE above",
+            "transposed": true,
+            "compact": true,
+            "actionsRules": [
+              {
+                "condition": "Click",
+                "field": "",
+                "value": "",
+                "customization": "set variable",
+                "customizationValue": ""
+              }
+            ]
+          }
+        },
+        {
+          "id": "b7a4cf91-c135-484a-a220-75538b366efe",
+          "title": "Show Only Differences",
+          "query": "WITH ['Yes','No'] as diffs UNWIND diffs as diff\nWITH diff WHERE toLower(diff) CONTAINS toLower($input) \nRETURN DISTINCT diff as value,  diff as display ORDER BY display DESC\n\n\n\n",
+          "width": 5,
+          "height": 2,
+          "x": 0,
+          "y": 0,
+          "type": "select",
+          "selection": {},
+          "settings": {
+            "type": "Custom Query",
+            "entityType": "Differences only",
+            "parameterName": "neodash_differences_only",
+            "autoSelectFirstValue": true
+          },
+          "schema": []
+        }
+      ]
+    },
+    {
+      "title": "Study Fields",
+      "reports": [
+        {
+          "id": "221091c9-0b4e-4e34-a821-92a1fcf443c9",
+          "title": "Study Field Comparison",
+          "query": "call apoc.when($neodash_differences_only contains \"Yes\",\"match(s:StudyValue) where id(s) in[$neodash_studya,$neodash_studyb]\nwith s, s.study_id_prefix+'-'+s.study_number as trialid,  CASE when id(s)=toInteger($neodash_studya) then 'Base' ELSE 'Compare' END as study\nwith s, trialid, study \nmatch (s)-[r1]->(txt:StudyField) where txt.field_name is not null \noptional match (txt)-[r2]->(:CTTermRoot)-[r3:HAS_NAME_ROOT]->(:CTTermNameRoot)-[r4:LATEST]->(term)\noptional match (txt)-[r5]->(x)-[:LATEST]->(term2)\nwith distinct study, trialid, term, term2, apoc.text.capitalize(apoc.text.join(split(txt.field_name,'_'),' ')) as field ,txt.value as value\nwith study, trialid, field, value, term, collect(term2.name) as term2\nwith study, trialid, field, CASE WHEN term is not null then term.name else CASE WHEN size(term2)>0 then apoc.text.join(term2,',') ELSE value END END as value\nwith study, trialid,field,value where not field contains 'null value code'\nwith distinct study, trialid, field,value\nwith field, apoc.map.fromPairs(collect([study,value])) as map\nwith field as StudyField,map[toString('Base')] as Base, map['Compare'] as Compare\nWITH StudyField,Base, Compare,\nCASE WHEN Base = Compare THEN 'no' ELSE CASE WHEN Base is null and Compare is null THEN 'no' ELSE 'yes' END END as Diff \nWITH StudyField,Base, Compare, Diff where Diff='yes'\nreturn StudyField, Base, Compare, Diff \"\n,\"match(s:StudyValue) where id(s) in[$neodash_studya,$neodash_studyb]\nwith s, s.study_id_prefix+'-'+s.study_number as trialid,  CASE when id(s)=toInteger($neodash_studya) then 'Base' ELSE 'Compare' END as study\nwith s, trialid, study \nmatch (s)-[r1]->(txt:StudyField) where txt.field_name is not null \noptional match (txt)-[r2]->(:CTTermRoot)-[r3:HAS_NAME_ROOT]->(:CTTermNameRoot)-[r4:LATEST]->(term)\noptional match (txt)-[r5]->(x)-[:LATEST]->(term2)\nwith distinct study, trialid, term, term2, apoc.text.capitalize(apoc.text.join(split(txt.field_name,'_'),' ')) as field ,txt.value as value\nwith study, trialid, field, value, term, collect(term2.name) as term2\nwith study, trialid, field, CASE WHEN term is not null then term.name else CASE WHEN size(term2)>0 then apoc.text.join(term2,',') ELSE value END END as value\nwith study, trialid,field,value where not field contains 'null value code'\nwith distinct study, trialid, field,value\nwith field, apoc.map.fromPairs(collect([study,value])) as map\nwith field as StudyField,map[toString('Base')] as Base, map['Compare'] as Compare\nWITH StudyField,Base, Compare,\nCASE WHEN Base = Compare THEN 'no' ELSE CASE WHEN Base is null and Compare is null THEN 'no' ELSE 'yes' END END as Diff \nWITH StudyField,Base, Compare, Diff \nreturn StudyField, Base, Compare, Diff\",{neodash_studya:$neodash_studya, neodash_studyb:$neodash_studyb}) YIELD value\nreturn value.StudyField as `Study Field`,\nvalue.Base as Base,\nvalue.Compare as Compare, \nvalue.Diff as __Diff order by `Study Field`",
+          "width": 24,
+          "height": 4,
+          "x": 0,
+          "y": 3,
+          "type": "table",
+          "selection": {},
+          "settings": {
+            "styleRules": [
+              {
+                "field": "__Diff",
+                "condition": "=",
+                "value": "no",
+                "customization": "row color",
+                "customizationValue": "#5FE8866E"
+              },
+              {
+                "field": "__Diff",
+                "condition": "=",
+                "value": "yes",
+                "customization": "row color",
+                "customizationValue": "#FF11116E"
+              }
+            ],
+            "refreshButtonEnabled": true,
+            "fullscreenEnabled": true,
+            "columnWidths": "[3,5,5,1]",
+            "noDataMessage": "No differences found",
+            "compact": true,
+            "allowDownload": true,
+            "wrapContent": true
+          }
+        },
+        {
+          "id": "8d648671-d1eb-458a-8b09-90b8cf10ed4d",
+          "title": "Current Study Selection",
+          "query": "MATCH (sr:StudyRoot)-[r0:HAS_VERSION]->(s:StudyValue)\nWHERE id(s) IN [toInteger($neodash_studya), toInteger($neodash_studyb)]\nWITH\n  CASE\n    WHEN count(distinct sr) > 1 THEN 'Across Study'\n    ELSE 'Within Study'\n  END AS compare_type\nWITH compare_type\nmatch(sr:StudyRoot)-[r0:HAS_VERSION]->(s:StudyValue) where id(s) in[toInteger($neodash_studya),toInteger($neodash_studyb)]\nwith compare_type,r0, s, sr, s.study_id_prefix+'-'+s.study_number as trialid, \nCASE when id(s)=toInteger($neodash_studya) then 'Base' ELSE 'Compare' END as Study\nwith compare_type,s, sr, trialid, Study\nmatch (sr:StudyRoot)-[r0:HAS_VERSION]->(s)\noptional match(s)<-[r:AFTER]-(sact:StudyAction)\nwith distinct compare_type,s,sr.uid as StudyRoot,Study, trialid, collect(r0.status) as statuses ,collect(r0.version) as versions, sact.date as date order by trialid, sact.date\nwith compare_type,s,StudyRoot,Study, trialid, split(apoc.temporal.format(date, 'iso_local_date_time'),'.')[0] as Date, case when 'LOCKED' in statuses then 'LOCKED' else 'DRAFT' END as Status,\napoc.text.join(apoc.coll.toSet(versions),'') as Version \nreturn Study,\ntrialid as TrialID, Date, Version, Status, compare_type as `Compare Type`, StudyRoot order by Study, Version\n\n\n",
+          "width": 24,
+          "height": 3,
+          "x": 0,
+          "y": 0,
+          "type": "table",
+          "selection": {},
+          "settings": {
+            "transposed": true,
+            "compact": true,
+            "fontSize": 12
+          },
+          "schema": []
+        }
+      ]
+    },
+    {
+      "title": "Objectives/Endpoints",
+      "reports": [
+        {
+          "id": "9fddd824-7a71-4ad5-a73b-389c94f87dc1",
+          "title": "Current Study Selection",
+          "query": "MATCH (sr:StudyRoot)-[r0:HAS_VERSION]->(s:StudyValue)\nWHERE id(s) IN [toInteger($neodash_studya), toInteger($neodash_studyb)]\nWITH\n  CASE\n    WHEN count(distinct sr) > 1 THEN 'Across Study'\n    ELSE 'Within Study'\n  END AS compare_type\nWITH compare_type\nmatch(sr:StudyRoot)-[r0:HAS_VERSION]->(s:StudyValue) where id(s) in[toInteger($neodash_studya),toInteger($neodash_studyb)]\nwith compare_type,r0, s, sr, s.study_id_prefix+'-'+s.study_number as trialid, \nCASE when id(s)=toInteger($neodash_studya) then 'Base' ELSE 'Compare' END as Study\nwith compare_type,s, sr, trialid, Study\nmatch (sr:StudyRoot)-[r0:HAS_VERSION]->(s)\noptional match(s)<-[r:AFTER]-(sact:StudyAction)\nwith distinct compare_type,s,sr.uid as StudyRoot,Study, trialid, collect(r0.status) as statuses ,collect(r0.version) as versions, sact.date as date order by trialid, sact.date\nwith compare_type,s,StudyRoot,Study, trialid, split(apoc.temporal.format(date, 'iso_local_date_time'),'.')[0] as Date, case when 'LOCKED' in statuses then 'LOCKED' else 'DRAFT' END as Status,\napoc.text.join(apoc.coll.toSet(versions),'') as Version \nreturn Study,\ntrialid as TrialID, Date, Version, Status, compare_type as `Compare Type`, StudyRoot order by Study, Version\n\n\n",
+          "width": 24,
+          "height": 3,
+          "x": 0,
+          "y": 0,
+          "type": "table",
+          "selection": {},
+          "settings": {
+            "compact": true,
+            "transposed": true,
+            "fontSize": 12
+          },
+          "schema": []
+        },
+        {
+          "id": "b1f62a4c-c432-44de-b9b5-92d7a3f072f3",
+          "title": "Endpoints (by Objective)",
+          "query": "call apoc.when($neodash_differences_only contains 'Yes',\"match(s:StudyValue) where id(s) in[toInteger($neodash_studya),toInteger($neodash_studyb)]\nwith s, CASE when id(s)=toInteger($neodash_studya) then 'Base' ELSE 'Compare' END as study\noptional match (s)-[r3]->(endp:StudyEndpoint)-[r3_1]->(endp_val:EndpointValue)\noptional match (s)-[r4]->(obj:StudyObjective)-[r4_1]->(obj_val:ObjectiveValue)\nmatch(endp)-[:STUDY_ENDPOINT_HAS_STUDY_OBJECTIVE]->(obj)\nwith study, obj, obj_val, endp, endp_val,\n'Obj '+toString(obj.order) + ' - Endp '+toString(endp.order) as Number,\nobj_val.name_plain as Objective, \nendp_val.name_plain as Endpoint\nwith Number, Objective, apoc.map.fromPairs(collect([study,Endpoint])) as map\nwith Number , Objective,map['Base'] as `Base - Endpoint`, map['Compare'] as `Compare - Endpoint`,\nCASE WHEN map['Base'] = map['Compare'] THEN 'no' ELSE CASE WHEN map['Base'] is null and map['Compare'] is null THEN 'no' ELSE 'yes' END END as Diff order by Number\nwith Number, Objective, `Base - Endpoint`,`Compare - Endpoint`, Diff where Diff='yes'\nreturn Number, Objective, `Base - Endpoint`,`Compare - Endpoint`, Diff\",\"match(s:StudyValue) where id(s) in[toInteger($neodash_studya),toInteger($neodash_studyb)]\nwith s, CASE when id(s)=toInteger($neodash_studya) then 'Base' ELSE 'Compare' END as study\noptional match (s)-[r3]->(endp:StudyEndpoint)-[r3_1]->(endp_val:EndpointValue)\noptional match (s)-[r4]->(obj:StudyObjective)-[r4_1]->(obj_val:ObjectiveValue)\nmatch(endp)-[:STUDY_ENDPOINT_HAS_STUDY_OBJECTIVE]->(obj)\nwith study, obj, obj_val, endp, endp_val,\n'Obj '+toString(obj.order) + ' - Endp '+toString(endp.order) as Number,\nobj_val.name_plain as Objective, \nendp_val.name_plain as Endpoint\nwith Number, Objective, apoc.map.fromPairs(collect([study,Endpoint])) as map\nwith Number , Objective,map['Base'] as `Base - Endpoint`, map['Compare'] as `Compare - Endpoint`,\nCASE WHEN map['Base'] = map['Compare'] THEN 'no' ELSE CASE WHEN map['Base'] is null and map['Compare'] is null THEN 'no' ELSE 'yes' END END as Diff order by Number\nreturn Number, Objective, `Base - Endpoint`,`Compare - Endpoint`, Diff\",{neodash_studya:$neodash_studya, neodash_studyb:$neodash_studyb}) YIELD value\nreturn value.Number as Number, \nvalue.Objective as Objective, \nvalue.`Base - Endpoint` as `Base - Endpoint`,\nvalue.`Compare - Endpoint` as `Compare - Endpoint`, \nvalue.Diff as Diff",
+          "width": 24,
+          "height": 4,
+          "x": 0,
+          "y": 7,
+          "type": "table",
+          "selection": {},
+          "settings": {
+            "fullscreenEnabled": true,
+            "refreshButtonEnabled": true,
+            "columnWidths": "[1,4,5,5,1]",
+            "styleRules": [
+              {
+                "field": "Diff",
+                "condition": "=",
+                "value": "no",
+                "customization": "row color",
+                "customizationValue": "#5FE8866E"
+              },
+              {
+                "field": "Diff",
+                "condition": "=",
+                "value": "yes",
+                "customization": "row color",
+                "customizationValue": "#FF11116E"
+              }
+            ],
+            "compact": true,
+            "allowDownload": true,
+            "noDataMessage": "No differences found",
+            "wrapContent": true
+          }
+        },
+        {
+          "id": "fcedd5a2-3c97-4709-96ad-856485ef2608",
+          "title": "Objectives",
+          "query": "call apoc.when($neodash_differences_only contains 'Yes',\"match(s:StudyValue) where id(s) in[toInteger($neodash_studya),toInteger($neodash_studyb)]\nwith s, CASE when id(s)=toInteger($neodash_studya) then 'Base' ELSE 'Compare' END as study\noptional match (s)-[r3]->(endp:StudyEndpoint)-[r3_1]->(endp_val:EndpointValue)\noptional match (s)-[r4]->(obj:StudyObjective)-[r4_1]->(obj_val:ObjectiveValue)\noptional match(endp)-[:STUDY_ENDPOINT_HAS_STUDY_OBJECTIVE]->(obj)\nwith study, obj, obj_val, endp, endp_val, \n'Obj '+toString(obj.order) as Number,\nobj_val.name_plain as Objective order by obj_val.name_plain,endp_val.name_plain\nwith Number, apoc.map.fromPairs(collect([study,Objective])) as map\nwith Number , map['Base'] as `Base - Objective`, map['Compare'] as `Compare - Objective`,\nCASE WHEN map['Base'] = map['Compare'] THEN 'no' ELSE CASE WHEN map['Base'] is null and map['Compare'] is null THEN 'no' ELSE 'yes' END END as Diff order by Number\nWITH Number, `Base - Objective`,`Compare - Objective`, Diff where Diff='yes'\nreturn Number, `Base - Objective`,`Compare - Objective`, Diff\",\"match(s:StudyValue) where id(s) in[toInteger($neodash_studya),toInteger($neodash_studyb)]\nwith s, CASE when id(s)=toInteger($neodash_studya) then 'Base' ELSE 'Compare' END as study\noptional match (s)-[r3]->(endp:StudyEndpoint)-[r3_1]->(endp_val:EndpointValue)\noptional match (s)-[r4]->(obj:StudyObjective)-[r4_1]->(obj_val:ObjectiveValue)\noptional match(endp)-[:STUDY_ENDPOINT_HAS_STUDY_OBJECTIVE]->(obj)\nwith study, obj, obj_val, endp, endp_val, \n'Obj '+toString(obj.order) as Number,\nobj_val.name_plain as Objective order by obj_val.name_plain,endp_val.name_plain\nwith Number, apoc.map.fromPairs(collect([study,Objective])) as map\nwith Number , map['Base'] as `Base - Objective`, map['Compare'] as `Compare - Objective`,\nCASE WHEN map['Base'] = map['Compare'] THEN 'no' ELSE CASE WHEN map['Base'] is null and map['Compare'] is null THEN 'no' ELSE 'yes' END END as Diff order by Number\nReturn Number, `Base - Objective`,`Compare - Objective`, Diff\",{neodash_studya:$neodash_studya, neodash_studyb:$neodash_studyb}) YIELD value\nreturn value.Number as Number,\nvalue.`Base - Objective` as `Base - Objective`,\nvalue.`Compare - Objective` as `Compare - Objective`, \nvalue.Diff as __Diff",
+          "width": 24,
+          "height": 4,
+          "x": 0,
+          "y": 3,
+          "type": "table",
+          "selection": {},
+          "settings": {
+            "styleRules": [
+              {
+                "field": "__Diff",
+                "condition": "=",
+                "value": "no",
+                "customization": "row color",
+                "customizationValue": "#5FE8866E"
+              },
+              {
+                "field": "__Diff",
+                "condition": "=",
+                "value": "yes",
+                "customization": "row color",
+                "customizationValue": "#FF11116E"
+              }
+            ],
+            "refreshButtonEnabled": true,
+            "fullscreenEnabled": true,
+            "allowDownload": true,
+            "compact": true,
+            "columnWidths": "[1,7,7,1]",
+            "noDataMessage": "No differences found",
+            "wrapContent": true
+          }
+        }
+      ]
+    },
+    {
+      "title": "Criteria",
+      "reports": [
+        {
+          "id": "a27b17d9-032d-4bd9-939b-09099d10b49c",
+          "title": "Current Study Selection",
+          "query": "MATCH (sr:StudyRoot)-[r0:HAS_VERSION]->(s:StudyValue)\nWHERE id(s) IN [toInteger($neodash_studya), toInteger($neodash_studyb)]\nWITH\n  CASE\n    WHEN count(distinct sr) > 1 THEN 'Across Study'\n    ELSE 'Within Study'\n  END AS compare_type\nWITH compare_type\nmatch(sr:StudyRoot)-[r0:HAS_VERSION]->(s:StudyValue) where id(s) in[toInteger($neodash_studya),toInteger($neodash_studyb)]\nwith compare_type,r0, s, sr, s.study_id_prefix+'-'+s.study_number as trialid, \nCASE when id(s)=toInteger($neodash_studya) then 'Base' ELSE 'Compare' END as Study\nwith compare_type,s, sr, trialid, Study\nmatch (sr:StudyRoot)-[r0:HAS_VERSION]->(s)\noptional match(s)<-[r:AFTER]-(sact:StudyAction)\nwith distinct compare_type,s,sr.uid as StudyRoot,Study, trialid, collect(r0.status) as statuses ,collect(r0.version) as versions, sact.date as date order by trialid, sact.date\nwith compare_type,s,StudyRoot,Study, trialid, split(apoc.temporal.format(date, 'iso_local_date_time'),'.')[0] as Date, case when 'LOCKED' in statuses then 'LOCKED' else 'DRAFT' END as Status,\napoc.text.join(apoc.coll.toSet(versions),'') as Version \nreturn Study,\ntrialid as TrialID, Date, Version, Status, compare_type as `Compare Type`, StudyRoot order by Study, Version\n\n\n",
+          "width": 24,
+          "height": 3,
+          "x": 0,
+          "y": 0,
+          "type": "table",
+          "selection": {},
+          "settings": {
+            "fontSize": 12,
+            "transposed": true,
+            "compact": true
+          },
+          "schema": []
+        },
+        {
+          "id": "fd6d2fa7-8639-4db1-ada2-fce7103a0739",
+          "title": "Study Criteria",
+          "query": "call apoc.when($neodash_differences_only contains 'Yes',\"match(s:StudyValue) where id(s) in[toInteger($neodash_studya),toInteger($neodash_studyb)]\nwith s, CASE when id(s)=toInteger($neodash_studya) then 'Base' ELSE 'Compare' END as study\noptional match (s)-[r3]->(endp:StudyCriteria)-[r3_1]->(crit_val:CriteriaValue)\nwith study, crit_val, \ncrit_val.name_plain as Criteria\nwith apoc.map.fromPairs(collect([study,Criteria])) as map\nwith map['Base'] as `Base - Criteria`, map['Compare'] as `Compare - Criteria`,\nCASE WHEN map['Base'] = map['Compare'] THEN 'no' ELSE CASE WHEN map['Base'] is null and map['Compare'] is null THEN 'no' ELSE 'yes' END END as Diff\nwith `Base - Criteria`,`Compare - Criteria`, Diff where Diff='yes'\nreturn `Base - Criteria`,`Compare - Criteria`, Diff\",\"match(s:StudyValue) where id(s) in[toInteger($neodash_studya),toInteger($neodash_studyb)]\nwith s, CASE when id(s)=toInteger($neodash_studya) then 'Base' ELSE 'Compare' END as study\noptional match (s)-[r3]->(endp:StudyCriteria)-[r3_1]->(crit_val:CriteriaValue)\nwith study, crit_val, \ncrit_val.name_plain as Criteria\nwith apoc.map.fromPairs(collect([study,Criteria])) as map\nwith map['Base'] as `Base - Criteria`, map['Compare'] as `Compare - Criteria`,\nCASE WHEN map['Base'] = map['Compare'] THEN 'no' ELSE CASE WHEN map['Base'] is null and map['Compare'] is null THEN 'no' ELSE 'yes' END END as Diff \nreturn `Base - Criteria`,`Compare - Criteria`, Diff\",{neodash_studya:$neodash_studya, neodash_studyb:$neodash_studyb}) YIELD value\nreturn value.`Base - Criteria` as `Base - Criteria`,\nvalue.`Compare - Criteria` as `Compare - Criteria`, \nvalue.Diff as __Diff",
+          "width": 24,
+          "height": 4,
+          "x": 0,
+          "y": 3,
+          "type": "table",
+          "selection": {},
+          "settings": {
+            "styleRules": [
+              {
+                "field": "__Diff",
+                "condition": "=",
+                "value": "no",
+                "customization": "row color",
+                "customizationValue": "#5FE8866E"
+              },
+              {
+                "field": "__Diff",
+                "condition": "=",
+                "value": "yes",
+                "customization": "row color",
+                "customizationValue": "#FF11116E"
+              }
+            ],
+            "allowDownload": true,
+            "compact": true,
+            "fullscreenEnabled": true,
+            "refreshButtonEnabled": true,
+            "noDataMessage": "No differences found",
+            "columnWidths": "[8,8,1]",
+            "wrapContent": true
+          }
+        }
+      ]
+    },
+    {
+      "title": "Planned Visits",
+      "reports": [
+        {
+          "id": "3f881d70-89ad-4326-bff5-b623eb6f4d24",
+          "title": "Planned Study Start Date",
+          "query": "RETURN true;",
+          "width": 12,
+          "height": 3,
+          "x": 12,
+          "y": 0,
+          "type": "select",
+          "selection": {},
+          "settings": {
+            "type": "Date Picker",
+            "entityType": "SSTDTC",
+            "parameterName": "neodash_sstdtc"
+          },
+          "schema": []
+        },
+        {
+          "id": "f7b1ef51-afc4-4baf-a7fb-7b4a5a9becba",
+          "title": "Visit Attribute Changes",
+          "query": "call apoc.when($neodash_differences_only contains  'Yes', \n//First\n\"match(s:StudyValue) where id(s) in[toInteger($neodash_studya),toInteger($neodash_studyb)]\nwith s, CASE when id(s)=toInteger($neodash_studya) then 'Base' ELSE 'Compare' END as study\noptional match (s)-[:HAS_STUDY_VISIT]->(vis)\noptional match(vis)-[:HAS_VISIT_NAME]->(vis_name_root)-[:HAS_VERSION]->(vis_name:VisitNameValue)\noptional match(vis)-[r]->(x_r)-[:HAS_VERSION]->(x) where not type(r)='HAS_VISIT_NAME' \n    with study, x, [k in keys(vis) where not k='uid']  as vis_keys, properties(vis) as vis_props, vis_name.name as `Visit Name`, vis.visit_number as `Visit Number`, [i in labels(x) where not (i contains 'ConceptValue' or i contains 'Template' or i contains 'Numeric' or i contains 'VisitName') ][0] as types\nwith study, `Visit Name`, `Visit Number`, substring(types,0, size(types)-5) as type, x, vis_keys, vis_props, CASE when not vis_keys is null THEN  range(0,size(vis_keys)-1,1) else [0] END AS coll_size \nwith study, `Visit Name`, `Visit Number`, type, CASE when x.value is null then x.name ELSE x.value+' ('+x.name+')' END as value, vis_keys, vis_props, coll_size \nwith study, `Visit Name`, `Visit Number`, collect(apoc.map.fromPairs([[type,value]])) as map, [k in vis_keys | apoc.map.fromPairs([[apoc.text.capitalize(replace(k,'_',' ')),apoc.text.capitalize(toLower(replace(toString(vis_props[k]),'_',' ')))]])] as add_maps\nwith study, `Visit Name`, `Visit Number`, CASE WHEN not add_maps is null THEN apoc.map.mergeList(apoc.coll.flatten([map,add_maps])) ELSE apoc.map.mergeList(map) END as map \nwith study, `Visit Name`, `Visit Number`, map,  CASE when not map is null THEN range(0,size(keys(map))-1,1) ELSE [0] END AS coll_size \nUNWIND coll_size AS idx\nwith study, `Visit Name`, `Visit Number`, \nCASE WHEN not isEmpty(map) THEN keys(map)[idx] ElSE null END as type, CASE WHEN not isEmpty(map) THEN map[keys(map)[idx]] ELSE null END as value\nwith `Visit Name`, `Visit Number`, type,  apoc.map.fromPairs(collect([study,value]))  as visit_info_map\nWITH\n`Visit Name`, \n`Visit Number`, \ntype as `Visit Property Type`, \nvisit_info_map['Base'] as Base, \nvisit_info_map['Compare'] as Compare,\nCASE WHEN visit_info_map['Base'] = visit_info_map['Compare'] THEN 'no' ELSE 'yes' END as Changed order by  `Visit Number`,`Visit Property Type` \nWITH `Visit Name`, `Visit Number`,`Visit Property Type`, Base, Compare, Changed where Changed='yes'\nreturn `Visit Name`, `Visit Number`,`Visit Property Type`, Base, Compare, Changed\",\n//second\n\"\nmatch(s:StudyValue) where id(s) in[toInteger($neodash_studya),toInteger($neodash_studyb)]\nwith s, CASE when id(s)=toInteger($neodash_studya) then 'Base' ELSE 'Compare' END as study\noptional match (s)-[:HAS_STUDY_VISIT]->(vis)\noptional match(vis)-[:HAS_VISIT_NAME]->(vis_name_root)-[:HAS_VERSION]->(vis_name:VisitNameValue)\noptional match(vis)-[r]->(x_r)-[:HAS_VERSION]->(x) where not type(r)='HAS_VISIT_NAME' \n    with study, x, [k in keys(vis) where not k='uid']  as vis_keys, properties(vis) as vis_props, vis_name.name as `Visit Name`, vis.visit_number as `Visit Number`, [i in labels(x) where not (i contains 'ConceptValue' or i contains 'Template' or i contains 'Numeric' or i contains 'VisitName') ][0] as types\nwith study, `Visit Name`, `Visit Number`, substring(types,0, size(types)-5) as type, x, vis_keys, vis_props, CASE when not vis_keys is null THEN  range(0,size(vis_keys)-1,1) else [0] END AS coll_size \nwith study, `Visit Name`, `Visit Number`, type, CASE when x.value is null then x.name ELSE x.value+' ('+x.name+')' END as value, vis_keys, vis_props, coll_size \nwith study, `Visit Name`, `Visit Number`, collect(apoc.map.fromPairs([[type,value]])) as map, [k in vis_keys | apoc.map.fromPairs([[apoc.text.capitalize(replace(k,'_',' ')),apoc.text.capitalize(toLower(replace(toString(vis_props[k]),'_',' ')))]])] as add_maps\nwith study, `Visit Name`, `Visit Number`, CASE WHEN not add_maps is null THEN apoc.map.mergeList(apoc.coll.flatten([map,add_maps])) ELSE apoc.map.mergeList(map) END as map \nwith study, `Visit Name`, `Visit Number`, map,  CASE when not map is null THEN range(0,size(keys(map))-1,1) ELSE [0] END AS coll_size \nUNWIND coll_size AS idx\nwith study, `Visit Name`, `Visit Number`, \nCASE WHEN not isEmpty(map) THEN keys(map)[idx] ElSE null END as type, CASE WHEN not isEmpty(map) THEN map[keys(map)[idx]] ELSE null END as value\nwith `Visit Name`, `Visit Number`, type,  apoc.map.fromPairs(collect([study,value]))  as visit_info_map\nWITH\n`Visit Name`, \n`Visit Number`, \ntype as `Visit Property Type`, \nvisit_info_map['Base'] as Base, \nvisit_info_map['Compare'] as Compare,\nCASE WHEN visit_info_map['Base'] = visit_info_map['Compare'] THEN 'no' ELSE 'yes' END as Changed order by  `Visit Number`,`Visit Property Type` \nWITH `Visit Name`, `Visit Number`,`Visit Property Type`, Base, Compare, Changed\nreturn `Visit Name`, `Visit Number`,`Visit Property Type`, Base, Compare, Changed\n\",{neodash_studya:$neodash_studya, neodash_studyb:$neodash_studyb}) YIELD value\nreturn value.`Visit Name` as`Visit Name`, \nvalue.`Visit Number` as `Visit Number`, \nvalue.`Visit Property Type` as `Visit Property Type`, \nvalue.Base as Base, \nvalue.Compare as Compare,\nvalue.Changed as __Diff order by `Visit Number`,`Visit Property Type`",
+          "width": 24,
+          "height": 4,
+          "x": 0,
+          "y": 8,
+          "type": "table",
+          "selection": {},
+          "settings": {
+            "refreshButtonEnabled": true,
+            "columnWidths": "[1,1,2,2,2,0.5]",
+            "styleRules": [
+              {
+                "field": "__Diff",
+                "condition": "=",
+                "value": "yes",
+                "customization": "row color",
+                "customizationValue": "#FF11116E"
+              },
+              {
+                "field": "__Diff",
+                "condition": "=",
+                "value": "no",
+                "customization": "row color",
+                "customizationValue": "#5FE8866E"
+              }
+            ],
+            "allowDownload": true,
+            "fullscreenEnabled": true,
+            "compact": true,
+            "wrapContent": true
+          }
+        },
+        {
+          "id": "71058c94-7543-428d-b272-b6befaea92f8",
+          "title": "Current Study Selection",
+          "query": "MATCH (sr:StudyRoot)-[r0:HAS_VERSION]->(s:StudyValue)\nWHERE id(s) IN [toInteger($neodash_studya), toInteger($neodash_studyb)]\nWITH\n  CASE\n    WHEN count(distinct sr) > 1 THEN 'Across Study'\n    ELSE 'Within Study'\n  END AS compare_type\nWITH compare_type\nmatch(sr:StudyRoot)-[r0:HAS_VERSION]->(s:StudyValue) where id(s) in[toInteger($neodash_studya),toInteger($neodash_studyb)]\nwith compare_type,r0, s, sr, s.study_id_prefix+'-'+s.study_number as trialid, \nCASE when id(s)=toInteger($neodash_studya) then 'Base' ELSE 'Compare' END as Study\nwith compare_type,s, sr, trialid, Study\nmatch (sr:StudyRoot)-[r0:HAS_VERSION]->(s)\noptional match(s)<-[r:AFTER]-(sact:StudyAction)\nwith distinct compare_type,s,sr.uid as StudyRoot,Study, trialid, collect(r0.status) as statuses ,collect(r0.version) as versions, sact.date as date order by trialid, sact.date\nwith compare_type,s,StudyRoot,Study, trialid, split(apoc.temporal.format(date, 'iso_local_date_time'),'.')[0] as Date, case when 'LOCKED' in statuses then 'LOCKED' else 'DRAFT' END as Status,\napoc.text.join(apoc.coll.toSet(versions),'') as Version \nreturn Study,\ntrialid as TrialID, Date, Version, Status, compare_type as `Compare Type`, StudyRoot order by Study, Version\n\n\n",
+          "width": 12,
+          "height": 3,
+          "x": 0,
+          "y": 0,
+          "type": "table",
+          "selection": {},
+          "settings": {
+            "refreshButtonEnabled": true,
+            "transposed": true,
+            "compact": true
+          }
+        },
+        {
+          "id": "63a77779-13f2-4e2b-a8d9-b6f9fd765e92",
+          "title": "Visit Timeline Differences",
+          "query": "match(st:StudyValue) where id(st) in[toInteger($neodash_studya),toInteger($neodash_studyb)]\nwith collect(st) as st\ncall apoc.when(size(st)>0,\n\"with $t as t\nUNWIND t as s \nwith s, CASE when id(s)=toInteger($studya) then 'Base' ELSE 'Compare' END as study\noptional match (s)-[:HAS_STUDY_VISIT]->(vis) \nWITH distinct s, apoc.coll.toSet(collect(vis.short_visit_label)) as vis, study\ncall apoc.when(size(vis)=0,\\\"return $study as Study, 'FALSE' as HasVisit\\\",\\\"return $study as Study, 'TRUE' as HasVisit\\\",{study:study,vis:vis}) yield value \nwith apoc.map.fromPairs(collect([value.Study,value.HasVisit])) as visitmap\nwith visitmap\ncall apoc.case([\n visitmap['Base']='TRUE' and visitmap['Compare']='TRUE', \n            \\\"with $t as t\n            UNWIND t as s \n            with s, CASE when id(s)=toInteger($neodash_studya) then 'Base' ELSE 'Compare' END as study\n            // optional match (s)-[:HAS_STUDY_VISIT]->(vis) where not vis.visit_class ='SPECIAL_VISIT'\n            optional match(s)-[:HAS_STUDY_VISIT]->(vis)-[:HAS_STUDY_DURATION_DAYS]->(dur_day_root:StudyDurationDaysRoot)-[:HAS_VERSION]->(dur_days:StudyDurationDaysValue)\n            optional match(vis)-[:HAS_STUDY_DURATION_WEEKS]->(dur_wk_root:StudyDurationWeeksRoot)-[:HAS_VERSION]->(dur_week:StudyDurationWeeksValue)\n            optional match(vis)-[:HAS_VISIT_NAME]->(vis_name_root)-[:HAS_VERSION]->(vis_name:VisitNameValue)\n            with s, study, vis, dur_days, vis_name order by id(s), vis.visit_number\n            with distinct s, study, dur_days.value as duration,vis, \n            CASE WHEN study='Base' THEN {duration:dur_days.value,visit_name:vis_name.name+'; Day: '+toString(toInteger(dur_days.value)), endDate:date($neodash_sstdtc)+Duration({days:(dur_days.value)}), startDate:date($neodash_sstdtc)+Duration({days:(dur_days.value)}), visit_number:vis.visit_number,study_id:study} ELSE  {duration:dur_days.value,visit_name:vis_name.name+'; Day: '+toString(toInteger(dur_days.value)), endDate:date($neodash_sstdtc)+Duration({days:(dur_days.value)}), startDate:date($neodash_sstdtc)+Duration({days:(dur_days.value)}), visit_number:vis.visit_number,study_id:study} END as prop order by duration, study\n            with duration, collect(distinct prop) as props\n            with duration, [x in range(0,size(props)-1,1) |\n            CASE WHEN size(props)=2 and not props[0].visit_number = props[1].visit_number \n            THEN apoc.create.vNode([\\\\\\\"Visit\\\\\\\"],\n            {visit_number:(\\\\\\\"<p style='color:green;'>Base: \\\\\\\" + props[0].visit_number + \\\\\\\"</p><p style='color:red;'>Comp: \\\\\\\" + props[1].visit_number + \\\\\\\"</p>\\\\\\\"),\n                        duration:toInteger(duration),\n                        visit_name:(\\\\\\\"<p style='color:green;'>Base: \\\\\\\" + props[0].visit_name + \\\\\\\"</p><p style='color:red;'>Comp: \\\\\\\" + props[1].visit_name + \\\\\\\"</p>\\\\\\\"),\n                        startDate:date($neodash_sstdtc)+Duration({days:(duration)}), \n                        endDate:date($neodash_sstdtc)+Duration({days:(duration)}),\n                        study_id:props[x].study_id,\n                        visit_label:substring(props[x].study_id,0,4)+': '+props[x].visit_name\n                        }) \n                        ELSE \n                        CASE WHEN size(props)=2 and props[0].visit_number = props[1].visit_number\n                        THEN apoc.create.vNode([ \\\\\\\"Visit \\\\\\\"],\n                        {visit_number: props[0].visit_number,\n                        duration:toInteger(duration),\n                        visit_name:substring(props[x].study_id,0,4)+': '+props[0].visit_name,\n                        startDate:date($neodash_sstdtc)+Duration({days:(duration)}), \n                        endDate:date($neodash_sstdtc)+Duration({days:(duration)}),\n                        study_id:props[x].study_id,\n                        visit_label:substring(props[x].study_id,0,4)+': '+props[x].visit_name\n                        }) ELSE \n                        CASE WHEN size(props)<2 and props[x].study_id='Base' \n                            THEN apoc.create.vNode([ \\\\\\\"Visit \\\\\\\"],\n                        {visit_number:( \\\\\\\"<p style='color:green;'>Base:  \\\\\\\" + props[x].visit_number +  \\\\\\\"</p><p style='color:red;'>Comp: Null </p> \\\\\\\"),\n                        duration:toInteger(duration),\n                        visit_name:( \\\\\\\"<p style='color:green;'>Base:  \\\\\\\" + props[x].visit_name +  \\\\\\\"</p><p style='color:red;'>Comp: Null </p> \\\\\\\"),\n                        startDate:date($neodash_sstdtc)+Duration({days:(duration)}), \n                        endDate:date($neodash_sstdtc)+Duration({days:(duration)}),\n                        study_id:props[x].study_id,\n                        visit_label:substring(props[x].study_id,0,4)+': '+props[x].visit_name\n                        })  ELSE\n                        CASE WHEN size(props)<2 and props[x].study_id='Compare' \n                            THEN apoc.create.vNode([ \\\\\\\"Visit \\\\\\\"],\n            {visit_number:( \\\\\\\"<p style='color:green;'>Base: Null </p><p style='color:red;'>Comp:  \\\\\\\" + props[x].visit_number +  \\\\\\\"</p> \\\\\\\"),\n                        duration:toInteger(duration),\n                        visit_name:( \\\\\\\"<p style='color:green;'>Base: Null</p><p style='color:red;'>Comp:  \\\\\\\" + props[x].visit_name),\n                        startDate:date($neodash_sstdtc)+Duration({days:(duration)}), \n                        endDate:date($neodash_sstdtc)+Duration({days:(duration)}),\n                        study_id:props[x].study_id,\n                        visit_label:substring(props[x].study_id,0,4)+': '+props[x].visit_name\n                        })END END END END] as v_visits\n            with duration, v_visits\n            UNWIND v_visits as v_visit\n            with duration, apoc.any.property(v_visit,'study_id') as study, v_visit\n            with study, collect(duration) as durations, collect(v_visit) as v_visits\n            with study, durations, v_visits, [n in RANGE(0,size(v_visits)-2) | apoc.create.vRelationship(v_visits[n], \\\\\\\"FOLLOWS \\\\\\\",{type: \\\\\\\"logical \\\\\\\"},v_visits[n+1]) ]as v_rels, range(0,size(v_visits)-1,1) AS coll_size \n            with study, durations, v_visits,v_rels, coll_size \n            UNWIND coll_size AS idx\n            WITH  study, durations[idx] as duration,\n            v_visits[idx] as v_visit, v_rels[idx] as v_rel\n            return v_visit,v_rel\\\",\n visitmap['Base']='TRUE' and visitmap['Compare']='FALSE', \n            \\\"with $t as t\n            UNWIND t as s \n            with s, CASE when id(s)=toInteger($neodash_studya) THEN 'Base' END as study\n            // optional match (s)-[:HAS_STUDY_VISIT]->(vis) where not vis.visit_class ='SPECIAL_VISIT'\n            optional match(s)-[:HAS_STUDY_VISIT]->(vis)-[:HAS_STUDY_DURATION_DAYS]->(dur_day_root:StudyDurationDaysRoot)-[:HAS_VERSION]->(dur_days:StudyDurationDaysValue)\n            optional match(vis)-[:HAS_STUDY_DURATION_WEEKS]->(dur_wk_root:StudyDurationWeeksRoot)-[:HAS_VERSION]->(dur_week:StudyDurationWeeksValue)\n            optional match(vis)-[:HAS_VISIT_NAME]->(vis_name_root)-[:HAS_VERSION]->(vis_name:VisitNameValue)\n            with s, study, vis, dur_days, vis_name order by id(s), vis.visit_number\n            with distinct s, study, dur_days.value as duration,vis, \n            CASE WHEN study='Base' THEN {duration:dur_days.value,visit_name:vis_name.name+'; Day: '+toString(toInteger(dur_days.value)), endDate:date($neodash_sstdtc)+Duration({days:(dur_days.value)}), startDate:date($neodash_sstdtc)+Duration({days:(dur_days.value)}), visit_number:vis.visit_number,study_id:study} END as prop order by duration, study\n            with duration, collect(distinct prop) as props\n            with duration, [x in range(0,size(props)-1,1) |\n            CASE WHEN size(props)=2 and not props[0].visit_number = props[1].visit_number \n            THEN apoc.create.vNode([ \\\\\\\"Visit \\\\\\\"],\n            {visit_number:( \\\\\\\"<p style='color:green;'>Base:  \\\\\\\" + props[0].visit_number +  \\\\\\\"</p><p style='color:red;'</p> \\\\\\\"),\n                        duration:toInteger(duration),\n                        visit_name:( \\\\\\\"<p style='color:green;'>Base:  \\\\\\\" + props[0].visit_name),\n                        startDate:date($neodash_sstdtc)+Duration({days:(duration)}), \n                        endDate:date($neodash_sstdtc)+Duration({days:(duration)}),\n                        study_id:props[x].study_id,\n                        visit_label:substring(props[x].study_id,0,4)+': '+props[x].visit_name\n                        }) \n                        ELSE \n                        CASE WHEN size(props)=2 and props[0].visit_number = props[1].visit_number\n                        THEN apoc.create.vNode([ \\\\\\\"Visit \\\\\\\"],\n                        {visit_number: props[0].visit_number,\n                        duration:toInteger(duration),\n                        visit_name:substring(props[x].study_id,0,4)+': '+props[0].visit_name,\n                        startDate:date($neodash_sstdtc)+Duration({days:(duration)}), \n                        endDate:date($neodash_sstdtc)+Duration({days:(duration)}),\n                        study_id:props[x].study_id,\n                        visit_label:substring(props[x].study_id,0,4)+': '+props[x].visit_name\n                        }) ELSE \n                        CASE WHEN size(props)<2 and props[x].study_id='Base' \n                            THEN apoc.create.vNode([ \\\\\\\"Visit \\\\\\\"],\n                        {visit_number:( \\\\\\\"<p style='color:green;'>Base:  \\\\\\\" + props[x].visit_number +  \\\\\\\"</p><p style='color:red;'>Comp: Null </p> \\\\\\\"),\n                        duration:toInteger(duration),\n                        visit_name:( \\\\\\\"<p style='color:green;'>Base:  \\\\\\\" + props[x].visit_name +  \\\\\\\"</p><p style='color:red;'>Comp: Null </p> \\\\\\\"),\n                        startDate:date($neodash_sstdtc)+Duration({days:(duration)}), \n                        endDate:date($neodash_sstdtc)+Duration({days:(duration)}),\n                        study_id:props[x].study_id,\n                        visit_label:substring(props[x].study_id,0,4)+': '+props[x].visit_name\n                        })  ELSE\n                        CASE WHEN size(props)<2 and props[x].study_id='Compare' \n                            THEN apoc.create.vNode([ \\\\\\\"Visit \\\\\\\"],\n            {visit_number:( \\\\\\\"<p style='color:green;'>Base: Null </p><p style='color:red;'>Comp: \\\\\\\" + props[x].visit_number +  \\\\\\\"</p> \\\\\\\"),\n                        duration:toInteger(duration),\n                        visit_name:(\\\\\\\"<p style='color:green;'>Base: Null</p><p style='color:red;'>Comp: \\\\\\\" + props[x].visit_name),\n                        startDate:date($neodash_sstdtc)+Duration({days:(duration)}), \n                        endDate:date($neodash_sstdtc)+Duration({days:(duration)}),\n                        study_id:props[x].study_id,\n                        visit_label:substring(props[x].study_id,0,4)+': '+props[x].visit_name\n                        })END END END END] as v_visits\n            with distinct duration, v_visits\n            UNWIND v_visits as v_visit\n            with duration, apoc.any.property(v_visit,'study_id') as study, v_visit\n            with study, collect(duration) as durations, collect(v_visit) as v_visits\n            with study, durations, v_visits, [n in RANGE(0,size(v_visits)-2) | apoc.create.vRelationship(v_visits[n], \\\\\\\"FOLLOWS \\\\\\\",{type: \\\\\\\"logical \\\\\\\"},v_visits[n+1]) ]as v_rels, range(0,size(v_visits)-1,1) AS coll_size \n            with study, durations, v_visits,v_rels, coll_size \n            UNWIND coll_size AS idx\n            WITH  study, durations[idx] as duration,\n            v_visits[idx] as v_visit, v_rels[idx] as v_rel\n            return v_visit,v_rel\\\",\n visitmap['Base']='FALSE' and visitmap['Compare']='TRUE', \n            \\\"with $t as t\n            UNWIND t as s \n            with s, CASE when id(s)=toInteger($neodash_studyb) then 'Compare' END as study\n            // optional match (s)-[:HAS_STUDY_VISIT]->(vis) where not vis.visit_class ='SPECIAL_VISIT'\n            optional match(s)-[:HAS_STUDY_VISIT]->(vis)-[:HAS_STUDY_DURATION_DAYS]->(dur_day_root:StudyDurationDaysRoot)-[:HAS_VERSION]->(dur_days:StudyDurationDaysValue)\n            optional match(vis)-[:HAS_STUDY_DURATION_WEEKS]->(dur_wk_root:StudyDurationWeeksRoot)-[:HAS_VERSION]->(dur_week:StudyDurationWeeksValue)\n            optional match(vis)-[:HAS_VISIT_NAME]->(vis_name_root)-[:HAS_VERSION]->(vis_name:VisitNameValue)\n            with s, study, vis, dur_days, vis_name order by id(s), vis.visit_number\n            with distinct s, study, dur_days.value as duration,vis, \n            CASE WHEN study='Compare' THEN {duration:dur_days.value,visit_name:vis_name.name+'; Day: '+toString(toInteger(dur_days.value)), endDate:date($neodash_sstdtc)+Duration({days:(dur_days.value)}), startDate:date($neodash_sstdtc)+Duration({days:(dur_days.value)}), visit_number:vis.visit_number,study_id:study} END as prop order by duration, study\n            with duration, collect(distinct prop) as props\n            with duration, [x in range(0,size(props)-1,1) |\n            CASE WHEN size(props)=2 and not props[0].visit_number = props[1].visit_number \n            THEN apoc.create.vNode([ \\\\\\\"Visit \\\\\\\"],\n            {visit_number:( \\\\\\\"<p style='color:green;'>Base:  \\\\\\\" + props[0].visit_number +  \\\\\\\"</p><p style='color:red;'</p> \\\\\\\"),\n                        duration:toInteger(duration),\n                        visit_name:( \\\\\\\"<p style='color:green;'>Base:  \\\\\\\" + props[0].visit_name),\n                        startDate:date($neodash_sstdtc)+Duration({days:(duration)}), \n                        endDate:date($neodash_sstdtc)+Duration({days:(duration)}),\n                        study_id:props[x].study_id,\n                        visit_label:substring(props[x].study_id,0,4)+': '+props[x].visit_name\n                        }) \n                        ELSE \n                        CASE WHEN size(props)=2 and props[0].visit_number = props[1].visit_number\n                        THEN apoc.create.vNode([ \\\\\\\"Visit \\\\\\\"],\n                        {visit_number: props[0].visit_number,\n                        duration:toInteger(duration),\n                        visit_name:substring(props[x].study_id,0,4)+': '+props[0].visit_name,\n                        startDate:date($neodash_sstdtc)+Duration({days:(duration)}), \n                        endDate:date($neodash_sstdtc)+Duration({days:(duration)}),\n                        study_id:props[x].study_id,\n                        visit_label:substring(props[x].study_id,0,4)+': '+props[x].visit_name\n                        }) ELSE \n                        CASE WHEN size(props)<2 and props[x].study_id='Base' \n                            THEN apoc.create.vNode([ \\\\\\\"Visit \\\\\\\"],\n                        {visit_number:( \\\\\\\"<p style='color:green;'>Base:  \\\\\\\" + props[x].visit_number +  \\\\\\\"</p><p style='color:red;'>Comp: Null </p> \\\\\\\"),\n                        duration:toInteger(duration),\n                        visit_name:( \\\\\\\"<p style='color:green;'>Base:  \\\\\\\" + props[x].visit_name +  \\\\\\\"</p><p style='color:red;'>Comp: Null </p> \\\\\\\"),\n                        startDate:date($neodash_sstdtc)+Duration({days:(duration)}), \n                        endDate:date($neodash_sstdtc)+Duration({days:(duration)}),\n                        study_id:props[x].study_id,\n                        visit_label:substring(props[x].study_id,0,4)+': '+props[x].visit_name\n                        })  ELSE\n            CASE WHEN size(props)<2 and props[x].study_id='Compare' \n                            THEN apoc.create.vNode([ \\\\\\\"Visit \\\\\\\"],\n            {visit_number:( \\\\\\\"<p style='color:green;'>Base: Null </p><p style='color:red;'>Comp: \\\\\\\" + props[x].visit_number +  \\\\\\\"</p> \\\\\\\"),\n                        duration:toInteger(duration),\n                        visit_name:(\\\\\\\"<p style='color:green;'>Base: Null</p><p style='color:red;'>Comp: \\\\\\\" + props[x].visit_name),\n                        startDate:date($neodash_sstdtc)+Duration({days:(duration)}), \n                        endDate:date($neodash_sstdtc)+Duration({days:(duration)}),\n                        study_id:props[x].study_id,\n                        visit_label:substring(props[x].study_id,0,4)+': '+props[x].visit_name\n                        })END END END END] as v_visits\n            with distinct duration, v_visits\n            UNWIND v_visits as v_visit\n            with duration, apoc.any.property(v_visit,'study_id') as study, v_visit\n            with study, collect(duration) as durations, collect(v_visit) as v_visits\n            with study, durations, v_visits, [n in RANGE(0,size(v_visits)-2) | apoc.create.vRelationship(v_visits[n], \\\\\\\"FOLLOWS \\\\\\\",{type: \\\\\\\"logical \\\\\\\"},v_visits[n+1]) ]as v_rels, range(0,size(v_visits)-1,1) AS coll_size \n            with study, durations, v_visits,v_rels, coll_size \n            UNWIND coll_size AS idx\n            WITH  study, durations[idx] as duration,\n            v_visits[idx] as v_visit, v_rels[idx] as v_rel\n            return v_visit,v_rel\\\"],\n            \\\"RETURN NULL as v_visit, NULL as v_rel\\\",{t:$t,neodash_studya:$studya,neodash_studyb:$studyb,neodash_sstdtc:$sstdtc}) YIELD value \nwith distinct value\nMATCH (n:Library) where value.v_visit is not null\nreturn distinct value.v_visit as v_visit,value.v_rel as v_rel\"  \n,\n\"RETURN NULL as v_visit, NULL as v_rel\",{t:st,sstdtc:$neodash_sstdtc, studya:$neodash_studya, studyb:$neodash_studyb}) YIELD value \nwith distinct value\nMATCH (n:Library) where value.v_visit is not null\nreturn distinct value.v_visit as v_visit, value.v_rel as v_rel",
+          "width": 24,
+          "height": 5,
+          "x": 0,
+          "y": 3,
+          "type": "gantt",
+          "selection": {
+            "Visit ": "(label)",
+            "FOLLOWS ": "(label)"
+          },
+          "settings": {
+            "refreshButtonEnabled": true,
+            "viewMode": "auto",
+            "styleRules": [
+              {
+                "field": "FOLLOWS.study",
+                "condition": "=",
+                "value": "$neodash_studya",
+                "customization": "node color",
+                "customizationValue": "blue"
+              }
+            ],
+            "barColor": "#10276F",
+            "fullscreenEnabled": true,
+            "nameProperty": "visit_label",
+            "orderProperty": "study_id",
+            "downloadImageEnabled": true
+          },
+          "schema": [
+            [
+              "Visit ",
+              "duration",
+              "visit_label",
+              "endDate",
+              "study_id",
+              "visit_number",
+              "visit_name",
+              "startDate"
+            ],
+            [
+              "FOLLOWS ",
+              "type"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Collections",
+      "reports": [
+        {
+          "id": "391cb06a-924b-4a56-b5fd-0e12a4429340",
+          "title": "Planned Collections at Visits",
+          "query": "match(s:StudyValue)  where id(s) in[toInteger($neodash_studya),toInteger($neodash_studyb)]\nwith s, id(s) as sid, CASE when id(s)=toInteger($neodash_studya) then 'Base' ELSE 'Compare' END as study\noptional match(s)-[:HAS_STUDY_VISIT]->(vis:StudyVisit)\noptional match(vis)-[:HAS_VISIT_NAME]->(vis_name_root)-[:HAS_VERSION]->(vis_name:VisitNameValue)\noptional match(vis)-[:STUDY_VISIT_HAS_SCHEDULE]->(schedule:StudyActivitySchedule)\noptional match (s)-[:HAS_STUDY_ACTIVITY_SCHEDULE]->(schedule),\n(schedule)<-[:STUDY_ACTIVITY_HAS_SCHEDULE]-(act:StudyActivity),\n(act)-[:HAS_SELECTED_ACTIVITY]->(act_val:ActivityValue),(act)-[:STUDY_ACTIVITY_HAS_STUDY_ACTIVITY_INSTANCE]->(ai_s:StudyActivityInstance)-[:HAS_SELECTED_ACTIVITY_INSTANCE]-(ai:ActivityInstanceValue),\n(ai)-[r1]->(g)<-[r2]-(act_val)\nwith distinct vis.visit_number as `Visit ID`,vis.short_visit_label as `Visit Short Label`, act_val.name as Activity, apoc.map.fromPairs(collect([study,'x'])) as map\nwhere Activity is not null\nwith `Visit ID`,`Visit Short Label`,Activity, map['Base'] as `Base - collection`, map['Compare'] as `Compare - collection` order by `Visit ID`, Activity\nwith `Visit ID`,`Visit Short Label`,Activity,`Base - collection`,`Compare - collection`, CASE WHEN `Base - collection`='x' and  `Compare - collection` is null then 'Added' ELSE CASE WHEN `Base - collection` is null and  `Compare - collection`='x' THEN 'Deleted' ELSE 'No change' END END as `Change Type`\nreturn `Visit ID`,`Visit Short Label`,Activity,`Base - collection`,`Compare - collection`, `Change Type`",
+          "width": 24,
+          "height": 4,
+          "x": 0,
+          "y": 3,
+          "type": "table",
+          "selection": {},
+          "settings": {
+            "noDataMessage": "No collections were specified.",
+            "allowDownload": true,
+            "compact": true,
+            "styleRules": [
+              {
+                "field": "Change Type",
+                "condition": "=",
+                "value": "Deleted",
+                "customization": "row color",
+                "customizationValue": "#FF11116E"
+              },
+              {
+                "field": "Change Type",
+                "condition": "=",
+                "value": "Added",
+                "customization": "row color",
+                "customizationValue": "#00B5FF6E"
+              },
+              {
+                "field": "Change Type",
+                "condition": "=",
+                "value": "No change",
+                "customization": "row color",
+                "customizationValue": "#5FE8866E"
+              }
+            ],
+            "fullscreenEnabled": true,
+            "refreshButtonEnabled": true,
+            "wrapContent": true
+          }
+        },
+        {
+          "id": "a25cbf27-c432-4b66-a6ab-103b7358087c",
+          "title": "Current Study Selection",
+          "query": "MATCH (sr:StudyRoot)-[r0:HAS_VERSION]->(s:StudyValue)\nWHERE id(s) IN [toInteger($neodash_studya), toInteger($neodash_studyb)]\nWITH\n  CASE\n    WHEN count(distinct sr) > 1 THEN 'Across Study'\n    ELSE 'Within Study'\n  END AS compare_type\nWITH compare_type\nmatch(sr:StudyRoot)-[r0:HAS_VERSION]->(s:StudyValue) where id(s) in[toInteger($neodash_studya),toInteger($neodash_studyb)]\nwith compare_type,r0, s, sr, s.study_id_prefix+'-'+s.study_number as trialid, \nCASE when id(s)=toInteger($neodash_studya) then 'Base' ELSE 'Compare' END as Study\nwith compare_type,s, sr, trialid, Study\nmatch (sr:StudyRoot)-[r0:HAS_VERSION]->(s)\noptional match(s)<-[r:AFTER]-(sact:StudyAction)\nwith distinct compare_type,s,sr.uid as StudyRoot,Study, trialid, collect(r0.status) as statuses ,collect(r0.version) as versions, sact.date as date order by trialid, sact.date\nwith compare_type,s,StudyRoot,Study, trialid, split(apoc.temporal.format(date, 'iso_local_date_time'),'.')[0] as Date, case when 'LOCKED' in statuses then 'LOCKED' else 'DRAFT' END as Status,\napoc.text.join(apoc.coll.toSet(versions),'') as Version \nreturn Study,\ntrialid as TrialID, Date, Version, Status, compare_type as `Compare Type`, StudyRoot order by Study, Version\n\n\n",
+          "width": 18,
+          "height": 3,
+          "x": 6,
+          "y": 0,
+          "type": "table",
+          "selection": {},
+          "settings": {
+            "compact": true,
+            "transposed": true
+          }
+        },
+        {
+          "id": "b92da453-42d4-4afd-bc74-b292775def5f",
+          "title": "Change Type",
+          "query": "with [\"Added\", \"No Change\", \"Deleted\"] as list\nunwind(list) as Status\nreturn Status",
+          "width": 6,
+          "height": 3,
+          "x": 0,
+          "y": 0,
+          "type": "table",
+          "selection": {},
+          "settings": {
+            "transposed": false,
+            "styleRules": [
+              {
+                "field": "Status",
+                "condition": "=",
+                "value": "Added",
+                "customization": "row color",
+                "customizationValue": "#00B5FF6E"
+              },
+              {
+                "field": "Status",
+                "condition": "=",
+                "value": "No Change",
+                "customization": "row color",
+                "customizationValue": "#5FE8866E"
+              },
+              {
+                "field": "Status",
+                "condition": "=",
+                "value": "Deleted",
+                "customization": "row color",
+                "customizationValue": "#FF11116E"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "title": "Activities",
+      "reports": [
+        {
+          "id": "6e9939bc-8d0b-47d2-9528-8dca019895bb",
+          "title": "Detailed Flowchart Compare Between Base and Compare Study",
+          "query": "//Activites compare\nMATCH (sr:StudyRoot)-[r0:HAS_VERSION]->(s:StudyValue)\nWHERE id(s) IN [toInteger($neodash_studya), toInteger($neodash_studyb)]\nWITH sr, s, r0.start_date as start_date\nWITH \n  CASE\n    WHEN count(distinct sr) > 1 THEN 'Across Study'\n    ELSE 'Within Study'\n  END AS compare_type,\n  apoc.map.fromPairs(\n    collect(\n      CASE\n        WHEN id(s) = toInteger($neodash_studya) THEN ['Base', start_date]\n        ELSE ['Compare', start_date]\n      END\n    )\n  ) AS version_dates\nWITH compare_type,version_dates\nMATCH (:StudyRoot)-[r0:HAS_VERSION]->(s:StudyValue)\nWHERE id(s) IN [toInteger($neodash_studya), toInteger($neodash_studyb)]\nWITH\ncompare_type,\nversion_dates,\n  r0,\n  s,\n  id(s) AS sid,\n  CASE\n    WHEN id(s) = toInteger($neodash_studya) THEN 'Base'\n    ELSE 'Compare'\n  END AS study\nOPTIONAL MATCH\n  (s)-[r3:HAS_STUDY_ACTIVITY]->\n  (act)-[:HAS_SELECTED_ACTIVITY]->\n  (act_val:ActivityValue)\nOPTIONAL MATCH\n  (s)-[:HAS_STUDY_ACTIVITY_SCHEDULE]->(schedule),\n  (schedule)<-[:STUDY_ACTIVITY_HAS_SCHEDULE]-(act:StudyActivity),\n  (act)-[:HAS_SELECTED_ACTIVITY]->(act_val:ActivityValue),\n  (act)-[:STUDY_ACTIVITY_HAS_STUDY_ACTIVITY_INSTANCE]->\n  (ai_s:StudyActivityInstance)-[:HAS_SELECTED_ACTIVITY_INSTANCE]-\n  (ai:ActivityInstanceValue),\n  (ai)-[r1]->(g)<-[r2]-(act_val)\nWITH version_dates, compare_type, study, act, act_val\nOPTIONAL MATCH\n  (act)-[r3:STUDY_ACTIVITY_HAS_STUDY_SOA_GROUP]->\n  (x)-[:HAS_FLOWCHART_GROUP]->\n  (ct_root:CTTermRoot)-[:HAS_NAME_ROOT]->\n  (ct_name_root:CTTermNameRoot)-[:LATEST]->\n  (flowchart_grp:CTTermNameValue)\nOPTIONAL MATCH\n  (act)-[:STUDY_ACTIVITY_HAS_STUDY_ACTIVITY_GROUP]->\n  (s_act_grp)-[:HAS_SELECTED_ACTIVITY_GROUP]->\n  (group:ActivityGroupValue)\nOPTIONAL MATCH\n  (act)-[:STUDY_ACTIVITY_HAS_STUDY_ACTIVITY_SUBGROUP]->\n  (s_act_s_grp)-[:HAS_SELECTED_ACTIVITY_SUBGROUP]->\n  (s_group:ActivitySubGroupValue)\nWITH\n  version_dates,\n  compare_type,\n  study,\n  flowchart_grp.name AS flowchart_grp,\n  group.name AS group,\n  s_group.name AS s_group,\n  act_val.name + '(Data collection: ' + act_val.is_data_collected + ')' AS act_detail\nWITH\n  version_dates,\n  compare_type,\n  act_detail,\n  apoc.map.fromPairs(collect([study, flowchart_grp])) AS flowchart_grp,\n  apoc.map.fromPairs(collect([study, group])) AS group,\n  apoc.map.fromPairs(collect([study, s_group])) AS s_group\nWITH\n  compare_type,\n  version_dates['Base'] AS base_version_date,\n  flowchart_grp['Base'] AS `SoA Group (Base)`,\n  group['Base'] AS `Activity Group (Base)`,\n  s_group['Base'] AS `Activity Subgroup (Base)`,\n  version_dates['Compare'] AS compare_version_date,\n  flowchart_grp['Compare'] AS `SoA Group (Compare)`,\n  group['Compare'] AS `Activity Group (Compare)`,\n  s_group['Compare'] AS `Activity Subgroup (Compare)`,\n  act_detail AS `Activity Detail`\nWHERE `Activity Detail` IS NOT NULL\nWITH\n  compare_type,\n  base_version_date,\n  `SoA Group (Base)`,\n  `Activity Group (Base)`,\n  `Activity Subgroup (Base)`,\n  compare_version_date,\n  `SoA Group (Compare)`,\n  `Activity Group (Compare)`,\n  `Activity Subgroup (Compare)`,\n  `Activity Detail`,\n  CASE\n    WHEN\n      compare_type = 'Within Study'\n      THEN\n        CASE \n          WHEN\n            base_version_date <= compare_version_date AND\n            `SoA Group (Base)` IS NOT NULL AND\n            `SoA Group (Compare)` IS NULL\n            THEN 'Activity deleted'\n          ELSE\n            CASE \n              WHEN\n                base_version_date <= compare_version_date AND\n                `SoA Group (Base)` IS NULL AND\n                `SoA Group (Compare)` IS NOT NULL\n                THEN 'Activity added'\n              ELSE\n                CASE\n                  WHEN\n                    base_version_date >= compare_version_date AND\n                    `SoA Group (Base)` IS NOT NULL AND\n                    `SoA Group (Compare)` IS NULL\n                    THEN 'Activity added'\n                  ELSE\n                    CASE\n                      WHEN\n                        base_version_date >= compare_version_date AND\n                        `SoA Group (Base)` IS NULL AND\n                        `SoA Group (Compare)` IS NOT NULL\n                        THEN 'Activity deleted'\n                      ELSE\n                        CASE\n                          WHEN\n                            (NOT `SoA Group (Base)` = `SoA Group (Compare)`) OR\n                            (NOT `Activity Group (Base)` =\n                              `Activity Group (Compare)`) OR\n                            (NOT `Activity Subgroup (Base)` =\n                              `Activity Subgroup (Compare)`)\n                            THEN 'Activity moved'\n                          ELSE 'No change'\n                        END\n                    END\n                END\n            END\n        END\n    ELSE\n      CASE\n        WHEN\n          `SoA Group (Base)` IS NOT NULL AND `SoA Group (Compare)` IS NULL\n          THEN 'Activity deleted'\n        ELSE\n          CASE\n            WHEN\n              `SoA Group (Base)` IS NULL AND `SoA Group (Compare)` IS NOT NULL\n              THEN 'Activity added'\n            ELSE\n              CASE\n                WHEN\n                  (NOT `SoA Group (Base)` = `SoA Group (Compare)`) OR\n                  (NOT `Activity Group (Base)` = `Activity Group (Compare)`) OR\n                  (NOT `Activity Subgroup (Base)` =\n                    `Activity Subgroup (Compare)`)\n                  THEN 'Activity moved'\n                ELSE 'No change'\n              END\n          END\n      END\nEND AS `Change Type`\nWITH\n  `Change Type`,\n  `SoA Group (Base)`,\n  `Activity Group (Base)`,\n  `Activity Subgroup (Base)`,\n  `SoA Group (Compare)`,\n  `Activity Group (Compare)`,\n  `Activity Subgroup (Compare)`,\n  `Activity Detail`\nRETURN\n  `Change Type`,\n  `SoA Group (Base)`,\n  `Activity Group (Base)`,\n  `Activity Subgroup (Base)`,\n  `SoA Group (Compare)`,\n  `Activity Group (Compare)`,\n  `Activity Subgroup (Compare)`,\n  `Activity Detail`",
+          "width": 24,
+          "height": 6,
+          "x": 0,
+          "y": 3,
+          "type": "table",
+          "selection": {},
+          "settings": {
+            "noDataMessage": "No assessments were specified.",
+            "styleRules": [
+              {
+                "field": "Change Type",
+                "condition": "=",
+                "value": "Activity added",
+                "customization": "row color",
+                "customizationValue": "#00B5FF6E"
+              },
+              {
+                "field": "Change Type",
+                "condition": "=",
+                "value": "Activity deleted",
+                "customization": "row color",
+                "customizationValue": "#FF11116E"
+              },
+              {
+                "field": "Change Type",
+                "condition": "=",
+                "value": "Activity moved",
+                "customization": "row color",
+                "customizationValue": "#FFA4006E"
+              },
+              {
+                "field": "Change Type",
+                "condition": "=",
+                "value": "No change",
+                "customization": "row color",
+                "customizationValue": "#5FE8866E"
+              }
+            ],
+            "compact": true,
+            "allowDownload": true,
+            "columnWidths": "[0.7,1,1,1,1,1,1,1]",
+            "fullscreenEnabled": true,
+            "refreshButtonEnabled": true,
+            "wrapContent": true
+          }
+        },
+        {
+          "id": "07ad5bb7-ad85-4d87-b56b-838995557506",
+          "title": "Current Study Selection",
+          "query": "MATCH (sr:StudyRoot)-[r0:HAS_VERSION]->(s:StudyValue)\nWHERE id(s) IN [toInteger($neodash_studya), toInteger($neodash_studyb)]\nWITH\n  CASE\n    WHEN count(distinct sr) > 1 THEN 'Across Study'\n    ELSE 'Within Study'\n  END AS compare_type\nWITH compare_type\nmatch(sr:StudyRoot)-[r0:HAS_VERSION]->(s:StudyValue) where id(s) in[toInteger($neodash_studya),toInteger($neodash_studyb)]\nwith compare_type,r0, s, sr, s.study_id_prefix+'-'+s.study_number as trialid, \nCASE when id(s)=toInteger($neodash_studya) then 'Base' ELSE 'Compare' END as Study\nwith compare_type,s, sr, trialid, Study\nmatch (sr:StudyRoot)-[r0:HAS_VERSION]->(s)\noptional match(s)<-[r:AFTER]-(sact:StudyAction)\nwith distinct compare_type,s,sr.uid as StudyRoot,Study, trialid, collect(r0.status) as statuses ,collect(r0.version) as versions, sact.date as date order by trialid, sact.date\nwith compare_type,s,StudyRoot,Study, trialid, split(apoc.temporal.format(date, 'iso_local_date_time'),'.')[0] as Date, case when 'LOCKED' in statuses then 'LOCKED' else 'DRAFT' END as Status,\napoc.text.join(apoc.coll.toSet(versions),'') as Version \nreturn Study,\ntrialid as TrialID, Date, Version, Status, compare_type as `Compare Type`, StudyRoot order by Study, Version\n\n\n",
+          "width": 18,
+          "height": 3,
+          "x": 6,
+          "y": 0,
+          "type": "table",
+          "selection": {},
+          "settings": {
+            "transposed": true,
+            "compact": true
+          }
+        },
+        {
+          "id": "89e64ef6-c2b6-431d-824d-d74750a056ec",
+          "title": "Change Type",
+          "query": "with [\"Added\", \"No Change\", \"Moved\", \"Deleted\"] as list\nunwind(list) as Status\nreturn Status\n\n\n",
+          "width": 6,
+          "height": 3,
+          "x": 0,
+          "y": 0,
+          "type": "table",
+          "selection": {},
+          "settings": {
+            "compact": true,
+            "styleRules": [
+              {
+                "field": "Status",
+                "condition": "=",
+                "value": "Added",
+                "customization": "row color",
+                "customizationValue": "#00B5FF6E"
+              },
+              {
+                "field": "Status",
+                "condition": "=",
+                "value": "No Change",
+                "customization": "row color",
+                "customizationValue": "#5FE8866E"
+              },
+              {
+                "field": "Status",
+                "condition": "=",
+                "value": "Moved",
+                "customization": "row color",
+                "customizationValue": "#FFA4006E"
+              },
+              {
+                "field": "Status",
+                "condition": "=",
+                "value": "Deleted",
+                "customization": "row color",
+                "customizationValue": "#FF11116E"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "parameters": {},
+  "extensions": {
+    "active": true,
+    "activeReducers": [
+      "DASHBOARD/EXTENSIONS/QUERY_TRANSLATOR/"
+    ],
+    "advanced-charts": {
+      "active": true
+    },
+    "styling": {
+      "active": true
+    },
+    "actions": {
+      "active": true
+    },
+    "query-translator": {
+      "active": true
+    },
+    "forms": {
+      "active": true
+    },
+    "access-control-management": {
+      "active": true
+    }
+  },
+  "uuid": "13122d0c-00c1-4a57-a028-41a6c1cd78bb"
+}

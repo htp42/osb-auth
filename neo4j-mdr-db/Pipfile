@@ -1,0 +1,25 @@
+[[source]]
+url = "https://pypi.python.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+requests = "=2.32.4"
+neo4j = "~=4.4"
+
+[dev-packages]
+pylint = "*"
+black = "*"
+
+[requires]
+python_version = "3.13.0"
+
+[scripts]
+lint = "pylint *.py"
+init_neo4j = "python init_neo4j.py"
+init_aura = "python init_aura.py"
+update_ct_stats = "python update_ct_stats.py"
+export_to_cypher = "python export_to_cypher.py"
+import_from_cypher = "python import_from_cypher.py"
+build-sbom = "python pipelines/scripts/generate_sbom.py"
+import_reports = "python neodash/import_reports.py"

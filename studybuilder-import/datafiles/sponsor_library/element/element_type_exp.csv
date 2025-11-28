@@ -1,0 +1,3 @@
+CODELIST_SUBMVAL,TERM_SUBMVAL,SPONSOR_NAME,SPONSOR_NAME_SENTENCE_CASE,NCI_PREFERRED_NAME,ORDER,CONCEPT_ID,CATALOGUES,DEFINITION
+"ELEMTP","TREATMENT ELEMENT TYPE","Treatment","treatment",,1,,,"Study Element with protocol specified intervention or treatment"
+"ELEMTP","NO TREATMENT ELEMENT TYPE","No Treatment","no treatment",,2,,,"Study Element without protocol specified intervention or treatment"

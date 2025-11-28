@@ -1,0 +1,15 @@
+CODELIST_SUBMVAL,TERM_SUBMVAL,SPONSOR_NAME,SPONSOR_NAME_SENTENCE_CASE,NCI_PREFERRED_NAME,ORDER,CONCEPT_ID,CATALOGUES,DEFINITION
+TIMEREF,SCR TIME REFERENCE,Screening,screening,Screening,1,,,Screening visit time reference
+TIMEREF,START RI TIME REFERENCE,Start of run-in,start of run-in,Start of run-in,2,,,Start of run-in visit time reference
+TIMEREF,START TRT TIME REFERENCE,Start of treatment,start of treatment,Start of treatment,3,,,Start of treatment visit time reference
+TIMEREF,START WO TIME REFERENCE,Start of washout,start of washout,Start of washout,4,,,Start of washout visit time reference
+TIMEREF,SURGERY TIME REFERENCE,Surgery,surgery,Surgery,5,,,Surgery visit time reference
+TIMEREF,TRT TIME REFERENCE,Treatment,treatment,Treatment,6,,,Treatment visit time reference
+TIMEREF,IC TIME REFERENCE,Informed consent,informed consent,Informed consent,7,,,Informed consent visit time reference
+TIMEREF,GLOBAL ANCHOR VISIT REFERENCE,Global anchor visit,global anchor visit,Global anchor visit,8,,,Global anchor visit time reference
+TIMEREF,ANCHOR VISIT IN VISIT GROUP REFERENCE,Anchor visit in visit group,anchor visit in visit group,Anchor visit in visit group,9,,,Anchor visit in visit group time reference
+TIMEREF,RANDOM TIME REFERENCE,Randomisation,randomisation,Randomisation,10,,,Randomisation visit time reference
+TIMEREF,RANDOM2 TIME REFERENCE,Randomisation 2,randomisation 2,Randomisation 2,11,,,Second randomisation visit time reference
+TIMEREF,EOSTUDY TIME REFERENCE,End of study,end of study,End of study,12,,,End of study visit time reference
+TIMEREF,EOTRT TIME REFERENCE,End of treatment,end of treatment,End of treatment,13,,,End of treatment visit time reference
+TIMEREF,EOTRIAL TIME REFERENCE,End of trial,end of trial,End of trial,14,,,End of trial visit time reference

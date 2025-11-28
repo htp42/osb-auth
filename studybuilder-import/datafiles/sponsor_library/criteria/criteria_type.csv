@@ -1,0 +1,7 @@
+CODELIST_SUBMVAL,TERM_SUBMVAL,SPONSOR_NAME,SPONSOR_NAME_SENTENCE_CASE,NCI_PREFERRED_NAME,ORDER,CONCEPT_ID,CATALOGUES,DEFINITION
+CRITRTP,INCLUSION,Inclusion Criteria,inclusion criteria,,1,C25532,,Criteria for inclusion into the study
+CRITRTP,EXCLUSION,Exclusion Criteria,exclusion criteria,,2,C25370,,Criteria for exclusion from the study
+CRITRTP,Run-in Criteria,Run-in Criteria,run-in criteria,,3,,,Criteria for run-in period in the study
+CRITRTP,Randomisation Criteria,Randomisation Criteria,randomisation criteria,,4,,,Criteria for randomisation in the study
+CRITRTP,Dosing Criteria,Dosing Criteria,dosing criteria,,5,,,Criteria for dosing in the study
+CRITRTP,Withdrawal Criteria,Withdrawal Criteria,withdrawal criteria,,6,,,Criteria for withdrawal from the study

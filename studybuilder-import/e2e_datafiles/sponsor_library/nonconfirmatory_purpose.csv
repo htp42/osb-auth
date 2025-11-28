@@ -1,0 +1,4 @@
+CODELIST_SUBMVAL,TERM_SUBMVAL,SPONSOR_NAME,SPONSOR_NAME_SENTENCE_CASE,NCI_PREFERRED_NAME,ORDER,CONCEPT_ID,CATALOGUES,DEFINITION
+NCNFPURP,COMPARE PURPOSE,Compare,compare,Compare purpose,1,,,Use 'compare' term for e.g. non-confirmatory study objectives
+NCNFPURP,INVESTIGATE PURPOSE,Investigate,investigate,Investigate purpose,2,,,Use 'investigate' term for e.g. non-confirmatory study objectives
+NCNFPURP,EXPLORE PURPOSE,Explore,explore,Explore purpose,3,,,Use 'explore' term for e.g. non-confirmatory study objectives

@@ -1,0 +1,5 @@
+CODELIST_SUBMVAL,TERM_SUBMVAL,SPONSOR_NAME,SPONSOR_NAME_SENTENCE_CASE,NCI_PREFERRED_NAME,ORDER,CONCEPT_ID,CATALOGUES,DEFINITION
+TPOFTRT,COMPARATIVE TREATMENT TYPE OF TREATMENT,Comparative Treatment,comparative treatment,Comparative treatment,1,,,Comparative Treatment
+TPOFTRT,URRENT TREATMENT TYPE OF TREATMENT,Current Treatment,current treatment,Current Treatment,2,,,Current treatment,
+TPOFTRT,INVESTIGATIONAL PRODUCT TYPE OF TREATMENT,Investigational Product,investigational product,Investigational product,3,,,Investigational Medical Product,
+TPOFTRT,PLACEBO TYPE OF TREATMENT,Placebo Treatment,placebo treatment,Placebo treatment,4,,,"Used when the planned compound is a placebo treatment. This type of treatment will not drive a record in SDTM.TS. A planned dosing should be made for the placebo compound creating rows in SDTM.EX",4
